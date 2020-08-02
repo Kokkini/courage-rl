@@ -51,7 +51,7 @@ class DangerousMazeEnv(gym.Env):
         NO_OP: np.array([0, 0], np.int32)
     }
 
-    def __init__(self):
+    def __init__(self, config=None):
         super(DangerousMazeEnv, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
