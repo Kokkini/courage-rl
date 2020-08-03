@@ -21,9 +21,9 @@ def residual_block(x, depth, prefix):
     return x + inputs
 
 
-def conv_sequence(x, depth, prefix):
+def conv_sequence(x, depth, strides, prefix):
     x = conv_layer(depth, prefix + "_conv")(x)
-    x = tf.keras.layers.MaxPool2D(pool_size=3, strides=2, padding="same")(x)
+    x = tf.keras.layers.MaxPool2D(pool_size=3, strides=strides, padding="same")(x)
     x = residual_block(x, depth, prefix=prefix + "_block0")
     x = residual_block(x, depth, prefix=prefix + "_block1")
     return x
@@ -40,14 +40,15 @@ class VisionNet(TFModelV2):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
-        depths = [16, 32, 32]
+        depths = [32, 32]
+        strides = [1,1]
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
         scaled_inputs = tf.cast(inputs, tf.float32) / 255.0
 
         x = scaled_inputs
         for i, depth in enumerate(depths):
-            x = conv_sequence(x, depth, prefix=f"seq{i}")
+            x = conv_sequence(x, depth, strides[i], prefix=f"seq{i}")
 
         x = tf.keras.layers.Flatten()(x)
         x = tf.keras.layers.ReLU()(x)
