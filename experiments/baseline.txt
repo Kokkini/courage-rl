@@ -1,10 +1,33 @@
-env: dangerous_maze,
+env: DangerousMaze
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0.5
 num_gpus_per_worker: 0.25
 num_envs_per_worker: 32
 batch_mode: complete_episodes
+explore: True
+exploration_config:
+    type: StochasticSampling
 model: 
     custom_model: vision_net
     custom_options: {}
+gamma: 0.99
+lambda: 0.95
+lr: 0.0005
+num_sgd_iter: 4
+sgd_minibatch_size: 2048
+train_batch_size: 16384 # 2048 * 8
+# Initial coefficient for KL divergence.
+kl_coeff: 0.0
+kl_target: 0.01
+vf_loss_coeff: 0.5
+entropy_coeff: 0.002
+clip_param: 0.2
+vf_clip_param: 0.3596127848861489
+# If specified, clip the global norm of gradients by this amount.
+grad_clip: 0.5
+vf_share_layers: True
+# Whether to clip rewards prior to experience postprocessing. Setting to
+# None means clip for Atari only.
+clip_rewards: null
+use_pytorch: False

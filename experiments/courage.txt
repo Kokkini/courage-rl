@@ -1,4 +1,4 @@
-env: dangerous_maze,
+env: DangerousMaze,
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0.5

@@ -131,6 +131,6 @@ class DangerousMazeEnv(gym.Env):
 
 # Register Env in Ray
 registry.register_env(
-    "dangerous_maze",
+    "DangerousMaze",
     lambda config: DangerousMazeEnv(config)
 )
