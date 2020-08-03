@@ -185,7 +185,7 @@ def value_and_danger_fetches(policy):
     """Adds value function outputs to experience train_batches."""
     return {
         SampleBatch.VF_PREDS: policy.model.value_function(),
-        SampleBatch.DANGER_PREDS: policy.model.danger_score_fuction()
+        SampleBatch.DANGER_PREDS: policy.model.danger_score_function()
     }
 
 def postprocess_ppo_gae(policy,
@@ -198,7 +198,7 @@ def postprocess_ppo_gae(policy,
     if completed:
         last_r = 0.0
     else:
-        if len(sample_batch[DONES]) > 1:  # rllib uses a dummy trajectory of length 1 to initialize the loss
+        if len(sample_batch[SampleBatch.DONES]) > 1:  # rllib uses a dummy trajectory of length 1 to initialize the loss
             print("A trajectory did not completed. Only support complete trajectories")
             exit(1)
 
