@@ -1,0 +1,10 @@
+env: dangerous_maze,
+num_workers: 2
+num_cpus_per_worker: 0.5
+num_gpus: 0.5
+num_gpus_per_worker: 0.25
+num_envs_per_worker: 32
+batch_mode: complete_episodes
+model: 
+    custom_model: vision_net
+    custom_options: {}

@@ -1,28 +1,29 @@
 import os
 import ray
 from ray import tune
+import argparse
 
 import dangerous_maze_env
 from ppo import CustomPPOTrainer
+from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
+
+args = argparse.ArgumentParser()
+args.add_argument("--baseline", action="store_true", help="whether to use the baseline ppo method")
+args.add_argument("--config", help="the config file path")
+args.parse_args()
+
 load_envs(os.getcwd()) # Load envs
 load_models(os.getcwd()) # Load models
 
 ray.init()
-config={
-  "env": dangerous_maze_env.DangerousMazeEnv,
-  "num_workers": 2,
-  "num_cpus_per_worker": 0.5,
-  "num_gpus": 0.5,
-  "num_gpus_per_worker": 0.25,
-  "num_envs_per_worker": 32,
-  "batch_mode": "complete_episodes",
-  "max_step": 200,
-  "danger_loss_coeff": 1,
-  "danger_reward_coeff": 0.1,
-  "gamma_danger": 0.9,
-  "model": {"custom_model": "vision_net",
-            "custom_options": {}}
-}
+with open(args.config) as f:
+    config = yaml.safe_load(f)
 
-tune.run(CustomPPOTrainer, config=config)
+trainer = None
+if args.baseline:
+    trainer = PPOTrainer
+else:
+    trainer = CustomPPOTrainer
+
+tune.run(trainer, config=config)

@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 import numpy as np
 import matplotlib.pyplot as plt
+from ray.tune import registry
 
 class DangerousMazeEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -127,3 +128,9 @@ class DangerousMazeEnv(gym.Env):
         c = np.floor(c / np.max(c)*255)
         c = np.array(c, np.uint8)
         return c
+
+# Register Env in Ray
+registry.register_env(
+    "dangerous_maze",
+    lambda config: DangerousMazeEnv(config)
+)
