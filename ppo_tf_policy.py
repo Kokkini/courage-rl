@@ -185,8 +185,7 @@ def value_and_danger_fetches(policy):
     """Adds value function outputs to experience train_batches."""
     return {
         SampleBatch.VF_PREDS: policy.model.value_function(),
-        SampleBatch.DANGER_PREDS: policy.model.danger_score_fuction(),
-        SampleBatch.MAX_STEP: policy.config["max_step"],
+        SampleBatch.DANGER_PREDS: policy.model.danger_score_fuction()
     }
 
 def postprocess_ppo_gae(policy,
@@ -216,6 +215,7 @@ def postprocess_ppo_gae(policy,
         lambda_=policy.config["lambda"],
         gamma_danger=policy.config["gamma_danger"],
         danger_reward_coeff=policy.config["danger_reward_coeff"],
+        env_max_step=policy.config["max_step"],
         use_gae=policy.config["use_gae"],
     )
     return batch

@@ -49,8 +49,6 @@ class SampleBatch:
     VF_PREDS = "vf_preds"
     DANGER_PREDS = "danger_preds"
 
-    MAX_STEP = "max_step"
-
 
 
     @PublicAPI
