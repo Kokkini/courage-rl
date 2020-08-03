@@ -194,12 +194,13 @@ def postprocess_ppo_gae(policy,
                         episode=None):
     """Adds the policy logits, VF preds, and advantages to the trajectory."""
 
-    completed = sample_batch["dones"][-1]
+    completed = sample_batch[SampleBatch.DONES][-1]
     if completed:
         last_r = 0.0
     else:
-        print("A trajectory did not completed. Only support complete trajectories")
-        exit(1)
+        if len(sample_batch[DONES]) > 1:  # rllib uses a dummy trajectory of length 1 to initialize the loss
+            print("A trajectory did not completed. Only support complete trajectories")
+            exit(1)
 
         next_state = []
         for i in range(policy.num_state_tensors()):

@@ -1,7 +1,8 @@
 import numpy as np
 import scipy.signal
-from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.annotations import DeveloperAPI
+
+from sample_batch import SampleBatch
 
 print("LOADED CUSTOM POSTPROCESSING")
 
