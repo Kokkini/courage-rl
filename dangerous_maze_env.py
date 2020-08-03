@@ -63,9 +63,6 @@ class DangerousMazeEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255, shape=self.obs_shape, dtype=np.uint8)
         self.state, self.player_pos = self.state_from_string_rep(self.string_rep)
         self.iter = 0
-        print("string rep")
-        print(self.string_rep)
-        print("string rep")
 
     def step(self, action):
         # Execute one time step within the environment

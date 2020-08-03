@@ -39,7 +39,7 @@ class VisionNet(TFModelV2):
 
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
-
+        print("LOADED CUSTOM MODEL")
         depths = [16, 32, 32]
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
