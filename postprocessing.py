@@ -118,19 +118,20 @@ def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,gamma_da
     assert use_critic or not use_gae, \
         "Can't use gae without using a value function"
 
-    death = np.zeros(trajsize)
+    death = np.zeros(trajsize, dtype=np.float32)
 
     if trajsize < env_max_step and last_r <= 0: # it died
         traj[Postprocessing.DANGER_REWARD] = (1 - gamma_danger ** np.arange(trajsize-1, -1, -1)) * traj[SampleBatch.DANGER_PREDS]
-        death[-1] = 1
+        death[-1] = 1.0
     else: # it lived
         traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS]
 
+    traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)
     traj[SampleBatch.REWARDS] += traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff
 
     danger_pred_t = np.concatenate(
         [rollout[SampleBatch.DANGER_PREDS],
-         np.array([0])])
+         np.array([0.0])])
     danger_delta_t = (
         death + gamma * danger_pred_t[1:] - danger_pred_t[:-1])
     danger_advantage = discount(danger_delta_t, gamma * lambda_)

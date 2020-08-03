@@ -68,7 +68,7 @@ class VisionNet(TFModelV2):
     def value_function(self):
         return tf.reshape(self._value, [-1])
 
-    def danger_score_fuction(self):
+    def danger_score_function(self):
         return tf.reshape(self._danger_score, [-1])
 
 # Register model in ModelCatalog
