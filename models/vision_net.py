@@ -54,18 +54,21 @@ class VisionNet(TFModelV2):
         x = tf.keras.layers.Dense(units=256, activation="relu", name="hidden")(x)
         logits = tf.keras.layers.Dense(units=num_outputs, name="pi")(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
-        self.base_model = tf.keras.Model(inputs, [logits, value])
+        danger_score = tf.keras.layers.Dense(units=1, activation="sigmoid", name="danger_score")(x)
+        self.base_model = tf.keras.Model(inputs, [logits, value, danger_score])
         self.register_variables(self.base_model.variables)
 
     def forward(self, input_dict, state, seq_lens):
         # explicit cast to float32 needed in eager
         obs = tf.cast(input_dict["obs"], tf.float32)
-        logits, self._value = self.base_model(obs)
+        logits, self._value, self._danger_score = self.base_model(obs)
         return logits, state
 
     def value_function(self):
         return tf.reshape(self._value, [-1])
 
+    def danger_score_fuction(self):
+        return tf.reshape(self._danger_score, [-1])
 
 # Register model in ModelCatalog
 ModelCatalog.register_custom_model("vision_net", VisionNet)

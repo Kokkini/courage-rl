@@ -1,15 +1,16 @@
 import logging
 
 import ray
-from ray.rllib.evaluation.postprocessing import compute_advantages, \
-    Postprocessing
-from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.policy.tf_policy import LearningRateSchedule, \
     EntropyCoeffSchedule
 from ray.rllib.policy.tf_policy_template import build_tf_policy
 from ray.rllib.utils.explained_variance import explained_variance
 from ray.rllib.utils.tf_ops import make_tf_callable
 from ray.rllib.utils import try_import_tf
+
+
+from postprocessing import compute_advantages, compute_advantages_and_danger, Postprocessing
+from sample_batch import SampleBatch
 
 print("LOADED CUSTOM POLICY")
 
@@ -24,18 +25,22 @@ class PPOLoss:
                  model,
                  value_targets,
                  advantages,
+                 danger_targets,
                  actions,
                  prev_logits,
                  prev_actions_logp,
                  vf_preds,
+                 danger_preds,
                  curr_action_dist,
                  value_fn,
+                 danger_fn,
                  cur_kl_coeff,
                  valid_mask,
                  entropy_coeff=0,
                  clip_param=0.1,
                  vf_clip_param=0.1,
                  vf_loss_coeff=1.0,
+                 danger_loss_coeff=1.0,
                  use_gae=True):
         """Constructs the loss for Proximal Policy Objective.
 
@@ -91,6 +96,13 @@ class PPOLoss:
                                           1 + clip_param))
         self.mean_policy_loss = reduce_mean_valid(-surrogate_loss)
 
+        danger_loss1 = tf.square(danger_fn - danger_targets)
+        danger_clipped = danger_preds + tf.clip_by_value(danger_fn - danger_preds, -vf_clip_param, vf_clip_param)
+        danger_loss2 = tf.square(danger_clipped - danger_targets)
+        danger_loss = tf.maximum(danger_loss1, danger_loss2)
+        self.mean_danger_loss = reduce_mean_valid(danger_loss)
+
+
         if use_gae:
             vf_loss1 = tf.square(value_fn - value_targets)
             vf_clipped = vf_preds + tf.clip_by_value(
@@ -100,7 +112,7 @@ class PPOLoss:
             self.mean_vf_loss = reduce_mean_valid(vf_loss)
             loss = reduce_mean_valid(
                 -surrogate_loss + cur_kl_coeff * action_kl +
-                vf_loss_coeff * vf_loss - entropy_coeff * curr_entropy)
+                vf_loss_coeff * vf_loss + danger_loss_coeff * danger_loss - entropy_coeff * curr_entropy)
         else:
             self.mean_vf_loss = tf.constant(0.0)
             loss = reduce_mean_valid(-surrogate_loss +
@@ -124,18 +136,22 @@ def ppo_surrogate_loss(policy, model, dist_class, train_batch):
         model,
         train_batch[Postprocessing.VALUE_TARGETS],
         train_batch[Postprocessing.ADVANTAGES],
+        train_batch[Postprocessing.DANGER_TARGETS],
         train_batch[SampleBatch.ACTIONS],
         train_batch[SampleBatch.ACTION_DIST_INPUTS],
         train_batch[SampleBatch.ACTION_LOGP],
         train_batch[SampleBatch.VF_PREDS],
+        train_batch[SampleBatch.DANGER_PREDS],
         action_dist,
         model.value_function(),
+        model.danger_score_function(),
         policy.kl_coeff,
         mask,
         entropy_coeff=policy.entropy_coeff,
         clip_param=policy.config["clip_param"],
         vf_clip_param=policy.config["vf_clip_param"],
         vf_loss_coeff=policy.config["vf_loss_coeff"],
+        danger_loss_coeff=policy.config["danger_loss_coeff"],
         use_gae=policy.config["use_gae"],
     )
 
@@ -165,6 +181,14 @@ def vf_preds_fetches(policy):
     }
 
 
+def value_and_danger_fetches(policy):
+    """Adds value function outputs to experience train_batches."""
+    return {
+        SampleBatch.VF_PREDS: policy.model.value_function(),
+        SampleBatch.DANGER_PREDS: policy.model.danger_score_fuction(),
+        SampleBatch.MAX_STEP: config["max_step"],
+    }
+
 def postprocess_ppo_gae(policy,
                         sample_batch,
                         other_agent_batches=None,
@@ -175,6 +199,9 @@ def postprocess_ppo_gae(policy,
     if completed:
         last_r = 0.0
     else:
+        print("A trajectory did not completed. Only support complete trajectories")
+        exit(1)
+
         next_state = []
         for i in range(policy.num_state_tensors()):
             next_state.append([sample_batch["state_out_{}".format(i)][-1]])
@@ -182,12 +209,15 @@ def postprocess_ppo_gae(policy,
                                sample_batch[SampleBatch.ACTIONS][-1],
                                sample_batch[SampleBatch.REWARDS][-1],
                                *next_state)
-    batch = compute_advantages(
+    batch = compute_advantages_and_danger(
         sample_batch,
         last_r,
-        policy.config["gamma"],
-        policy.config["lambda"],
-        use_gae=policy.config["use_gae"])
+        gamma=policy.config["gamma"],
+        lambda_=policy.config["lambda"],
+        gamma_danger=policy.config["gamma_danger"],
+        danger_reward_coeff=policy.config["danger_reward_coeff"],
+        use_gae=policy.config["use_gae"],
+    )
     return batch
 
 
@@ -269,7 +299,7 @@ PPOTFPolicy = build_tf_policy(
     get_default_config=lambda: ray.rllib.agents.ppo.ppo.DEFAULT_CONFIG,
     loss_fn=ppo_surrogate_loss,
     stats_fn=kl_and_loss_stats,
-    extra_action_fetches_fn=vf_preds_fetches,
+    extra_action_fetches_fn=value_and_danger_fetches,
     postprocess_fn=postprocess_ppo_gae,
     gradients_fn=clip_gradients,
     before_init=setup_config,

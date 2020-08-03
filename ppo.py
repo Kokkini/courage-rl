@@ -208,7 +208,7 @@ def execution_plan(workers, config):
         .for_each(lambda result: warn_about_bad_reward_scales(config, result))
 
 
-PPOTrainer = build_trainer(
+CustomPPOTrainer = build_trainer(
     name="PPO",
     default_config=DEFAULT_CONFIG,
     default_policy=PPOTFPolicy,
