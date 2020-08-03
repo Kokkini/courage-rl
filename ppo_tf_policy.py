@@ -186,7 +186,7 @@ def value_and_danger_fetches(policy):
     return {
         SampleBatch.VF_PREDS: policy.model.value_function(),
         SampleBatch.DANGER_PREDS: policy.model.danger_score_fuction(),
-        SampleBatch.MAX_STEP: config["max_step"],
+        SampleBatch.MAX_STEP: policy.config["max_step"],
     }
 
 def postprocess_ppo_gae(policy,
