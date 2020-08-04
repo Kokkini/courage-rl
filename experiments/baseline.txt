@@ -1,4 +1,7 @@
 env: DangerousMaze
+env_config:
+    death_penalty: False
+    level_file: envs/6x6.txt
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0.5

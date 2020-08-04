@@ -15,27 +15,6 @@ class DangerousMazeEnv(gym.Env):
     N_DISCRETE_ACTIONS = 5
     MAX_ITER = 200
 
-    string_rep = [
-            "p......x..",
-            ".....x.x..",
-            "..x..x...x",
-            "...x.xx...",
-            "....x...x.",
-            ".....x..x.",
-            "......x..x",
-            ".......x..",
-            "........xG",
-            "........gx"]
-
-    obs_shape = (len(string_rep), len(string_rep[0]), 3)
-
-    reward_map = {
-        "x": -1,
-        ".": 0,
-        "g": 1,
-        "G": 10
-    }
-
     char_map = {
         "p": np.array([0, 0, 255], dtype=np.uint8),
         ".": np.array([0, 0, 0], dtype=np.uint8),
@@ -58,12 +37,38 @@ class DangerousMazeEnv(gym.Env):
         # They must be gym.spaces objects
         # Example when using discrete actions:
 
+        self.string_rep = self.get_string_rep(config["level_file"])
+        self.obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
+
         self.action_space = spaces.Discrete(self.N_DISCRETE_ACTIONS)
         # Example for using image as input:
 
         self.observation_space = spaces.Box(low=0, high=255, shape=self.obs_shape, dtype=np.uint8)
         self.state, self.player_pos = self.state_from_string_rep(self.string_rep)
         self.iter = 0
+        if config["death_penalty"]:
+            death_reward = -1
+        else:
+            death_reward = 0
+        self.reward_map = {
+            "x": death_reward,
+            ".": 0,
+            "g": 1,
+            "G": 10
+        }
+
+
+
+    def get_string_rep(self, filepath):
+        result = []
+        with open(filepath) as f:
+            for line in f.readlines():
+                if len(line) > 1:
+                    result.append(line.strip())
+                else:
+                    print(f"there's an empty line in the string representation file {filepath} of the environment")
+                    exit(1)
+        return result
 
     def step(self, action):
         # Execute one time step within the environment
