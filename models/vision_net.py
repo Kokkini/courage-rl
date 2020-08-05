@@ -29,10 +29,9 @@ def conv_sequence(x, depth, strides, prefix):
     x = residual_block(x, depth, prefix=prefix + "_block1")
     return x
 
-def make_base_model(x, depths, strides):
+def make_base_model(x, depths, strides, prefix):
     for i, depth in enumerate(depths):
-        x = conv_sequence(x, depth, strides[i], prefix=f"seq{i}")
-
+        x = conv_sequence(x, depth, strides[i], prefix=f"{prefix}_seq{i}")
     x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.ReLU()(x)
     x = tf.keras.layers.Dense(units=256, activation="relu", name="hidden")(x)
@@ -58,8 +57,8 @@ class VisionNet(TFModelV2):
 
         x = scaled_inputs
 
-        x_danger = make_base_model(x, depths, strides)
-        x = make_base_model(x, depths, strides)
+        x_danger = make_base_model(x, depths, strides, "danger")
+        x = make_base_model(x, depths, strides, "main")
 
         logits = tf.keras.layers.Dense(units=num_outputs, name="pi")(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
