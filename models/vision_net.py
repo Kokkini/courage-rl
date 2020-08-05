@@ -29,6 +29,15 @@ def conv_sequence(x, depth, strides, prefix):
     x = residual_block(x, depth, prefix=prefix + "_block1")
     return x
 
+def make_base_model(x, depths, strides):
+    for i, depth in enumerate(depths):
+        x = conv_sequence(x, depth, strides[i], prefix=f"seq{i}")
+
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.ReLU()(x)
+    x = tf.keras.layers.Dense(units=256, activation="relu", name="hidden")(x)
+    return x
+
 
 class VisionNet(TFModelV2):
     """
@@ -48,15 +57,14 @@ class VisionNet(TFModelV2):
         scaled_inputs = tf.cast(inputs, tf.float32) / 255.0
 
         x = scaled_inputs
-        for i, depth in enumerate(depths):
-            x = conv_sequence(x, depth, strides[i], prefix=f"seq{i}")
 
-        x = tf.keras.layers.Flatten()(x)
-        x = tf.keras.layers.ReLU()(x)
-        x = tf.keras.layers.Dense(units=256, activation="relu", name="hidden")(x)
+        x_danger = make_base_model(x, depths, strides)
+        x = make_base_model(x, depths, strides)
+
         logits = tf.keras.layers.Dense(units=num_outputs, name="pi")(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
-        danger_score = tf.keras.layers.Dense(units=1, activation="sigmoid", name="danger_score")(x)
+        danger_score = tf.keras.layers.Dense(units=1, activation="sigmoid", name="danger_score")(x_danger)
+
         self.base_model = tf.keras.Model(inputs, [logits, value, danger_score])
         self.register_variables(self.base_model.variables)
 

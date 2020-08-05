@@ -18,17 +18,17 @@ model:
     custom_options: {}
 gamma: 0.9
 lambda: 0.95
-lr: 0.00035
-num_sgd_iter: 4
+lr: 0.0006
+num_sgd_iter: 2
 sgd_minibatch_size: 2048
 train_batch_size: 16384 # 2048 * 8
 # Initial coefficient for KL divergence.
 kl_coeff: 0.0
 kl_target: 0.01
-vf_loss_coeff: 0.64
+vf_loss_coeff: 0.45
 entropy_coeff: 0.0011
 clip_param: 0.2
-vf_clip_param: 0.066
+vf_clip_param: 0.1
 # If specified, clip the global norm of gradients by this amount.
 grad_clip: 0.5
 vf_share_layers: True
