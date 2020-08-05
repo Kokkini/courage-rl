@@ -23,7 +23,8 @@ def residual_block(x, depth, prefix):
 
 def conv_sequence(x, depth, strides, prefix):
     x = conv_layer(depth, prefix + "_conv")(x)
-    x = tf.keras.layers.MaxPool2D(pool_size=3, strides=strides, padding="same")(x)
+    if strides > 1:
+        x = tf.keras.layers.MaxPool2D(pool_size=3, strides=strides, padding="same")(x)
     x = residual_block(x, depth, prefix=prefix + "_block0")
     x = residual_block(x, depth, prefix=prefix + "_block1")
     return x
