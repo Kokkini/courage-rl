@@ -3,10 +3,12 @@ from gym import spaces
 import numpy as np
 import matplotlib.pyplot as plt
 from ray.tune import registry
+from PIL import Image
+
 
 class DangerousMazeEnv(gym.Env):
     """Custom Environment that follows gym interface"""
-    metadata = {'render.modes': ['human']}
+    metadata = {'render.modes': ['human', 'rgb_array']}
     UP = 0
     DOWN = 1
     LEFT = 2
@@ -57,8 +59,6 @@ class DangerousMazeEnv(gym.Env):
             "G": 10
         }
 
-
-
     def get_string_rep(self, filepath):
         result = []
         with open(filepath) as f:
@@ -76,7 +76,7 @@ class DangerousMazeEnv(gym.Env):
         self.iter += 1
         prev_pos = self.player_pos.copy()
         pos = prev_pos + self.action_map[action]
-        pos = np.minimum(self.obs_shape[:2] - np.array([1,1], np.int32), np.maximum(pos, 0))
+        pos = np.minimum(self.obs_shape[:2] - np.array([1, 1], np.int32), np.maximum(pos, 0))
         self.player_pos = pos
         prev_c = self.get_char(prev_pos, self.string_rep)
         c = self.get_char(pos, self.string_rep)
@@ -108,11 +108,20 @@ class DangerousMazeEnv(gym.Env):
         self.iter = 0
         return self.state
 
-    def render(self, mode='human', close=False):
+    def render(self, mode='rgb_array', close=False):
         # Render the environment to the screen
-        plt.imshow(self.state)
-        plt.pause(0.01)
-        return
+        if mode == "human":
+            plt.imshow(self.state)
+            plt.pause(0.01)
+
+        enlarge_factor = 30
+        img = Image.fromarray(self.state)
+        new_size = (self.state.shape[0] * enlarge_factor, self.state.shape[1] * enlarge_factor)
+        img = img.resize(new_size, Image.NEAREST)
+        # img = np.array(img)
+        # print(img.shape)
+        # img = self.scale(self.state, new_size[0], new_size[1])
+        return np.array(img, np.uint8)
 
     def state_from_string_rep(self, string_rep):
         state = []
@@ -130,9 +139,16 @@ class DangerousMazeEnv(gym.Env):
         c1 = np.array(c1, np.float32)
         c2 = np.array(c2, np.float32)
         c = c1 + c2
-        c = np.floor(c / np.max(c)*255)
+        c = np.floor(c / np.max(c) * 255)
         c = np.array(c, np.uint8)
         return c
+
+    def scale(self, im, nR, nC):
+        nR0 = len(im)  # source number of rows
+        nC0 = len(im[0])  # source number of columns
+        return [[im[int(nR0 * r / nR)][int(nC0 * c / nC)]
+                 for c in range(nC)] for r in range(nR)]
+
 
 # Register Env in Ray
 registry.register_env(
