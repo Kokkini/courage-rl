@@ -3,7 +3,7 @@ env_config:
     death_penalty: False
     level_file: /content/courage-rl/envs/6x6.txt
 stop:
-    timesteps_total: 1500000
+    timesteps_total: 150000000
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0.5
@@ -43,9 +43,9 @@ vf_share_layers: True
 clip_rewards: null
 use_pytorch: False
 evaluation_interval: 5
-evaluation_num_episodes: 10
+evaluation_num_episodes: 5
 monitor: False
 evaluation_config:
-    explore: False
+    explore: True
     monitor: True
     num_envs_per_worker: 1
