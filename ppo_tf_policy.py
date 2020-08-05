@@ -100,7 +100,7 @@ class PPOLoss:
         danger_clipped = danger_preds + tf.clip_by_value(danger_fn - danger_preds, -vf_clip_param, vf_clip_param)
         danger_loss2 = tf.square(danger_clipped - danger_targets)
         danger_loss = tf.maximum(danger_loss1, danger_loss2)
-        self.mean_danger_loss = reduce_mean_valid(danger_loss)
+        # self.mean_danger_loss = reduce_mean_valid(danger_loss)
 
 
         if use_gae:
@@ -214,7 +214,8 @@ def postprocess_ppo_gae(policy,
         last_r,
         gamma=policy.config["gamma"],
         lambda_=policy.config["lambda"],
-        gamma_danger=policy.config["gamma_danger"],
+        lambda_danger=policy.config["lambda_danger"],
+        gamma_danger_tail=policy.config["gamma_danger_tail"],
         danger_reward_coeff=policy.config["danger_reward_coeff"],
         env_max_step=policy.config["max_step"],
         use_gae=policy.config["use_gae"],
