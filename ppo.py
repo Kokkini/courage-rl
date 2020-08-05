@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = with_common_config({
     "danger_reward_coeff": 0.1,
     "danger_loss_coeff": 1,
-    "gamma_danger": 0.9,
+    "gamma_danger_tail": 0.0,
     "max_step": 200,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
