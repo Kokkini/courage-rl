@@ -38,5 +38,8 @@ clip_rewards: null
 use_pytorch: False
 evaluation_interval: 5
 evaluation_num_episodes: 10
+monitor: False
 evaluation_config:
     explore: False
+    monitor: True
+    num_envs_per_worker: 1
