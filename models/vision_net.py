@@ -34,7 +34,7 @@ def make_base_model(x, depths, strides, prefix):
         x = conv_sequence(x, depth, strides[i], prefix=f"{prefix}_seq{i}")
     x = tf.keras.layers.Flatten()(x)
     x = tf.keras.layers.ReLU()(x)
-    x = tf.keras.layers.Dense(units=256, activation="relu", name="hidden")(x)
+    x = tf.keras.layers.Dense(units=256, activation="relu", name=f"{prefix}_hidden")(x)
     return x
 
 
