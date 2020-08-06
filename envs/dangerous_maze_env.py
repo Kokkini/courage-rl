@@ -59,6 +59,10 @@ class DangerousMazeEnv(gym.Env):
             "G": 10
         }
 
+        self.flat_obs = False
+        if config.get("flat_obs"):
+            self.flat_obs = True
+
     def get_string_rep(self, filepath):
         result = []
         with open(filepath) as f:
@@ -93,7 +97,8 @@ class DangerousMazeEnv(gym.Env):
         if self.iter >= self.MAX_ITER:
             done = True
         info = {}
-
+        if self.flat_obs:
+            state = np.reshape(state, [-1])
         return state, reward, done, info
 
     def get_char(self, pos, string_rep):
@@ -106,7 +111,9 @@ class DangerousMazeEnv(gym.Env):
         # Reset the state of the environment to an initial state
         self.state, self.player_pos = self.state_from_string_rep(self.string_rep)
         self.iter = 0
-        return self.state
+        state = self.state
+        if self.flat_obs: state = np.reshape(state, [-1])
+        return state
 
     def render(self, mode='rgb_array', close=False):
         # Render the environment to the screen

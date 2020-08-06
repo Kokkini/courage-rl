@@ -1,0 +1,15 @@
+env: DangerousMaze
+env_config:
+    death_penalty: False
+    level_file: /content/courage-rl/envs/6x6.txt
+    flat_obs: True
+stop:
+    timesteps_total: 750000
+num_workers: 1
+batch_mode: complete_episodes
+evaluation_interval: 5
+evaluation_num_episodes: 5
+evaluation_config:
+    explore: False
+    monitor: True
+    num_envs_per_worker: 1

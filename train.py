@@ -3,6 +3,7 @@ import ray
 from ray import tune
 import argparse
 import yaml
+import importlib
 
 from ppo import CustomPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
@@ -36,10 +37,6 @@ if "stop" in config:
 if args.tune_config is None:
     tune.run(trainer, config=config, stop=stop)
 else:
-    from hyperopt import hp
-    from ray.tune.suggest.hyperopt import HyperOptSearch
-    from hyperopt.pyll.base import scope
-    import importlib
 
     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
     algo = tuning_module.algo
