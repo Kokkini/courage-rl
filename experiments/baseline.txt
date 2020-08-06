@@ -14,7 +14,7 @@ explore: True
 exploration_config:
     type: StochasticSampling
 model: 
-    custom_model: vision_net
+    custom_model: simple_fcnet
     custom_options: {}
 gamma: 0.9
 lambda: 0.95
@@ -37,7 +37,7 @@ vf_share_layers: True
 clip_rewards: null
 use_pytorch: False
 evaluation_interval: 5
-evaluation_num_episodes: 10
+evaluation_num_episodes: 1
 monitor: False
 evaluation_config:
     explore: False

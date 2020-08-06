@@ -14,7 +14,7 @@ explore: True
 exploration_config:
     type: StochasticSampling
 model: 
-    custom_model: vision_net
+    custom_model: simple_fcnet
     custom_options: {}
 
 max_step: 200
@@ -44,9 +44,9 @@ vf_share_layers: True
 clip_rewards: null
 use_pytorch: False
 evaluation_interval: 5
-evaluation_num_episodes: 5
+evaluation_num_episodes: 1
 monitor: False
 evaluation_config:
-    explore: True
+    explore: False
     monitor: True
     num_envs_per_worker: 1
