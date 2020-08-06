@@ -24,6 +24,7 @@ DEFAULT_CONFIG = with_common_config({
     "danger_loss_coeff": 1,
     "gamma_danger_tail": 0.0,
     "max_step": 200,
+    "lambda_danger": 1.0,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
     "use_critic": True,
