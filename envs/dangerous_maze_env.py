@@ -40,7 +40,8 @@ class DangerousMazeEnv(gym.Env):
         # Example when using discrete actions:
 
         self.string_rep = self.get_string_rep(config["level_file"])
-        self.obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
+        self.original_obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
+        self.obs_shape = self.original_obs_shape
 
         self.action_space = spaces.Discrete(self.N_DISCRETE_ACTIONS)
         # Example for using image as input:
@@ -60,8 +61,13 @@ class DangerousMazeEnv(gym.Env):
         }
 
         self.flat_obs = False
-        if config.get("flat_obs"):
+        if config.get("flat_obs", False):
             self.flat_obs = True
+            self.obs_shape = [np.prod(self.obs_shape)]
+            self.observation_space = spaces.Box(low=0, high=255, shape=self.obs_shape, dtype=np.uint8)
+        # print(config)
+        # print(self.flat_obs)
+        # print(self.obs_shape)
 
     def get_string_rep(self, filepath):
         result = []
@@ -80,7 +86,7 @@ class DangerousMazeEnv(gym.Env):
         self.iter += 1
         prev_pos = self.player_pos.copy()
         pos = prev_pos + self.action_map[action]
-        pos = np.minimum(self.obs_shape[:2] - np.array([1, 1], np.int32), np.maximum(pos, 0))
+        pos = np.minimum(self.original_obs_shape[:2] - np.array([1, 1], np.int32), np.maximum(pos, 0))
         self.player_pos = pos
         prev_c = self.get_char(prev_pos, self.string_rep)
         c = self.get_char(pos, self.string_rep)
@@ -98,7 +104,8 @@ class DangerousMazeEnv(gym.Env):
             done = True
         info = {}
         if self.flat_obs:
-            state = np.reshape(state, [-1])
+            state = state.flatten()
+        # print(f"step shape: {state.shape}")
         return state, reward, done, info
 
     def get_char(self, pos, string_rep):
@@ -112,7 +119,9 @@ class DangerousMazeEnv(gym.Env):
         self.state, self.player_pos = self.state_from_string_rep(self.string_rep)
         self.iter = 0
         state = self.state
-        if self.flat_obs: state = np.reshape(state, [-1])
+        if self.flat_obs: 
+            state = state.flatten()
+        # print(f"reset shape: {state.shape}")
         return state
 
     def render(self, mode='rgb_array', close=False):
