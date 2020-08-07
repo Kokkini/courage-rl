@@ -93,7 +93,6 @@ class DangerousMazeEnv(gym.Env):
         # calculate state
         self.state[prev_pos[0], prev_pos[1]] = self.char_map[prev_c]
         self.state[pos[0], pos[1]] = self.mix_color(self.char_map[c], self.char_map["p"])
-        state = self.state
 
         # calculate reward
         reward = self.reward_map[c]
@@ -103,10 +102,8 @@ class DangerousMazeEnv(gym.Env):
         if self.iter >= self.MAX_ITER:
             done = True
         info = {}
-        if self.flat_obs:
-            state = state.flatten()
-        # print(f"step shape: {state.shape}")
-        return state, reward, done, info
+        external_state = self.internal_to_external_state(self.state)
+        return external_state, reward, done, info
 
     def get_char(self, pos, string_rep):
         c = string_rep[pos[0]][pos[1]]
@@ -114,15 +111,35 @@ class DangerousMazeEnv(gym.Env):
             c = "."
         return c
 
+    def get_all_states(self):
+        rep = deepcopy(self.string_rep)
+        base_state, player_pos = self.state_from_string_rep(self.string_rep)
+        rep[player_pos[0]][player_pos[1]] = "."
+        base_state[player_pos[0], player_pos[1]] = self.char_map["."]
+        all_states = []
+        for row in range(len(rep)):
+            for col in range(len(rep[0])):
+                c = rep[row][col]
+                state_copy = np.copy(base_state)
+                state_copy[row, col] = self.mix_color(self.char_map[c], self.char_map["p"])
+                ext_state = self.internal_to_external_state(state_copy)
+                all_states.append(ext_state)
+        return np.array(all_states), base_state
+
+    def internal_to_external_state(self, internal_state):
+        external_state = internal_state
+        if self.flat_obs:
+            external_state = external_state.flatten()
+        return external_state
+
     def reset(self):
         # Reset the state of the environment to an initial state
         self.state, self.player_pos = self.state_from_string_rep(self.string_rep)
         self.iter = 0
-        state = self.state
-        if self.flat_obs: 
-            state = state.flatten()
+        external_state = self.internal_to_external_state(self.state)
         # print(f"reset shape: {state.shape}")
-        return state
+        return external_state
+
 
     def render(self, mode='rgb_array', close=False):
         # Render the environment to the screen

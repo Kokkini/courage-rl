@@ -1,21 +1,22 @@
-
 from typing import Dict
-
+import os
 import ray
 from ray.rllib.env import BaseEnv
 from ray.rllib.policy import Policy
-from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.evaluation import MultiAgentEpisode, RolloutWorker
 from ray.rllib.agents.callbacks import DefaultCallbacks
-
+import tensorflow as tf
 import numpy as np
+from PIL import Image
+
+from sample_batch import SampleBatch
 
 class CustomCallbacks(DefaultCallbacks):
     """
-    Please refer to : 
+    Please refer to :
         https://github.com/ray-project/ray/blob/master/rllib/examples/custom_metrics_and_callbacks.py
         https://docs.ray.io/en/latest/rllib-training.html#callbacks-and-custom-metrics
-    for examples on adding your custom metrics and callbacks. 
+    for examples on adding your custom metrics and callbacks.
 
     This code adapts the documentations of the individual functions from :
     https://github.com/ray-project/ray/blob/master/rllib/agents/callbacks.py
@@ -25,6 +26,9 @@ class CustomCallbacks(DefaultCallbacks):
     ep_rewards = []
     num_eval_eps = 1000
     best_so_far = -float("inf")
+    env = None
+    img_log_dir = "/content/imgs"
+    iter = 0
 
     def on_episode_start(self, worker: RolloutWorker, base_env: BaseEnv,
                          policies: Dict[str, Policy],
@@ -42,7 +46,7 @@ class CustomCallbacks(DefaultCallbacks):
                 metrics for the episode.
             kwargs: Forward compatibility placeholder.
         """
-        pass
+        self.env = base_env.get_unwrapped()
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
                         episode: MultiAgentEpisode, **kwargs):
@@ -144,8 +148,48 @@ class CustomCallbacks(DefaultCallbacks):
         #     if mean_reward > self.best_so_far:
         #         self.best_so_far = mean_reward
         #         trainer.save()
+        self.iter += 1
+        all_states, base_state = self.env.get_all_states()
+        # sample_obs = np.random.randint(0,255,(8*8*3,),np.uint8)
+        fetch = trainer.compute_action(all_states, full_fetch=True)
+        danger_score = fetch[SampleBatch.DANGER_PREDS]
+        img = self.visualize(base_state, danger_score)
+        img = Image.fromarray(img)
+        os.makedirs(self.img_log_dir, exist_ok=True)
+        img.save(os.path.join(self.img_log_dir, f"danger_viz_{self.iter:03}.jpg"))
 
-        model = trainer.get_policy().model
-        output = model.from_batch({"obs": np.random.randint(0,255,(10,8*8*3),np.uint8)})
-        print(output)
-        print(output[0].eval())
+
+    def visualize(self, base_state, danger_score):
+        # get enlarged image of the base_state
+        enlarge_factor = 30
+        small_size = enlarge_factor // 3
+
+        img = Image.fromarray(base_state)
+        new_size = (base_state.state.shape[0] * enlarge_factor, base_state.state.shape[1] * enlarge_factor)
+        img = img.resize(new_size, Image.NEAREST)
+        img = np.array(img, np.uint8)
+
+        num_acts = danger_score.shape[-1]
+        danger_score = np.reshape(danger_score, (base_state.shape[0], base_state.shape[1], num_acts))
+
+        # visualize the danger score
+        lowest = np.array([0,0,255])
+        highest = np.array([255,255,0])
+
+        position_mapping = {
+            self.env.UP: (0, 1),
+            self.env.DOWN: (2, 1),
+            self.env.LEFT: (1, 0),
+            self.env.RIGHT: (1, 2),
+            self.env.NO_OP: (1, 1)
+        }
+
+        for row in range(base_state.shape[0]):
+            for col in range(base_state.shape[1]):
+                anchor = (row*enlarge_factor, col*enlarge_factor)
+                for i in range(num_acts):
+                    pos = position_mapping[i]
+                    score = danger_score[row, col, i]
+                    color = np.array(np.clip(highest * score + lowest * (1-score), 0, 255), np.int32)
+                    img[anchor[0] + small_size*pos[0], anchor[1]+small_size*pos[1]] = np.tile(color, small_size*small_size).reshape([small_size, small_size, 3])
+        return img
