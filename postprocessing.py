@@ -18,6 +18,9 @@ class Postprocessing:
     DANGER_TARGETS = "danger_targets"
     DANGER_REWARD = "danger_reward"
 
+def get_one_each_row(arr, indices):
+    return np.array([arr[enum, item] for enum, item in enumerate(indices)])
+
 @DeveloperAPI
 def compute_advantages(rollout,
                        last_r,
@@ -90,7 +93,7 @@ def compute_advantages(rollout,
 
 
 @DeveloperAPI
-def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_danger=1.0,gamma_danger_tail=0.0, danger_reward_coeff=1, env_max_step=1000, use_gae=True,use_critic=True):
+def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_death=1.0, gamma_death=0.0, danger_reward_coeff=1, env_max_step=1000, use_gae=True,use_critic=True):
     """
     Given a rollout, compute its value targets and the advantage.
 
@@ -120,21 +123,23 @@ def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_d
 
     death = np.zeros(trajsize, dtype=np.float32)
 
+    if len(traj[SampleBatch.DANGER_PREDS].shape) > 1:
+        traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
+    traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
     if trajsize < env_max_step and last_r <= 0: # it died
-        traj[Postprocessing.DANGER_REWARD] = (1 - gamma_danger_tail ** np.arange(trajsize, 0, -1)) * traj[SampleBatch.DANGER_PREDS]
+        traj[Postprocessing.DANGER_REWARD][-1] = -1.0
         death[-1] = 1.0
-    else: # it lived
-        traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS]
 
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)
     traj[SampleBatch.REWARDS] += traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff
 
+
     danger_pred_t = np.concatenate(
-        [rollout[SampleBatch.DANGER_PREDS],
+        [traj[SampleBatch.DANGER_PREDS],
          np.array([0.0])])
     danger_delta_t = (
-        death + gamma * danger_pred_t[1:] - danger_pred_t[:-1])
-    danger_advantage = discount(danger_delta_t, gamma * lambda_)
+        death + gamma_death * danger_pred_t[1:] - danger_pred_t[:-1])
+    danger_advantage = discount(danger_delta_t, gamma_death * lambda_death)
     traj[Postprocessing.DANGER_TARGETS] = (
         danger_advantage + traj[SampleBatch.DANGER_PREDS]).copy().astype(np.float32)
 

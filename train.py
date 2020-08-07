@@ -5,7 +5,7 @@ import argparse
 import yaml
 import importlib
 
-from ppo import CustomPPOTrainer
+from ppo import StateDangerPPOTrainer, ActionDangerPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
 
@@ -14,6 +14,7 @@ args.add_argument("--baseline", action="store_true", help="whether to use the ba
 args.add_argument("--config", help="the config file path")
 args.add_argument("--tune-config", help="config for hyperparamter tuning")
 args.add_argument("--num-tune-runs", type=int, default=20, help="number of hyperparamter sets to test")
+args.add_argument("--action-danger", action="store_true", help="whether to calculate danger level using action instead of state")
 
 args = args.parse_args()
 
@@ -28,7 +29,11 @@ trainer = None
 if args.baseline:
     trainer = PPOTrainer
 else:
-    trainer = CustomPPOTrainer
+    config["model"]["custom_config"]["action_danger"] = args.action_danger
+    if args.action_danger:
+        trainer = ActionDangerPPOTrainer
+    else:
+        trainer = StateDangerPPOTrainer
 
 stop = None
 if "stop" in config:
@@ -37,7 +42,6 @@ if "stop" in config:
 if args.tune_config is None:
     tune.run(trainer, config=config, stop=stop)
 else:
-
     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
     algo = tuning_module.algo
 

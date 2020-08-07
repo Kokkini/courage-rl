@@ -9,7 +9,7 @@ from ray.rllib.execution.metric_ops import StandardMetricsReporting
 from ray.rllib.utils import try_import_tf
 
 # local import
-from ppo_tf_policy import PPOTFPolicy
+from ppo_tf_policy import PPOTFStateDangerPolicy, PPOTFActionDangerPolicy
 
 print("LOADED CUSTOM TRAINER")
 
@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = with_common_config({
     "danger_reward_coeff": 0.1,
     "danger_loss_coeff": 1,
-    "gamma_danger_tail": 0.0,
+    "gamma_death": 0.0,
     "max_step": 200,
-    "lambda_danger": 1.0,
+    "lambda_death": 1.0,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
     "use_critic": True,
@@ -213,10 +213,18 @@ def execution_plan(workers, config):
         .for_each(lambda result: warn_about_bad_reward_scales(config, result))
 
 
-CustomPPOTrainer = build_trainer(
+StateDangerPPOTrainer = build_trainer(
     name="PPO",
     default_config=DEFAULT_CONFIG,
-    default_policy=PPOTFPolicy,
+    default_policy=PPOTFStateDangerPolicy,
+    get_policy_class=get_policy_class,
+    execution_plan=execution_plan,
+    validate_config=validate_config)
+
+ActionDangerPPOTrainer = build_trainer(
+    name="PPO",
+    default_config=DEFAULT_CONFIG,
+    default_policy=PPOTFActionDangerPolicy,
     get_policy_class=get_policy_class,
     execution_plan=execution_plan,
     validate_config=validate_config)

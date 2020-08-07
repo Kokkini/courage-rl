@@ -41,7 +41,8 @@ class PPOLoss:
                  vf_clip_param=0.1,
                  vf_loss_coeff=1.0,
                  danger_loss_coeff=1.0,
-                 use_gae=True):
+                 use_gae=True,
+                 action_danger=False):
         """Constructs the loss for Proximal Policy Objective.
 
         Arguments:
@@ -96,6 +97,10 @@ class PPOLoss:
                                           1 + clip_param))
         self.mean_policy_loss = reduce_mean_valid(-surrogate_loss)
 
+        if action_danger:
+            action_onehot = tf.one_hot(actions, tf.shape(prev_logits)[1])
+            danger_fn = tf.reduce_sum(danger_fn*action_onehot, axis=1)
+
         danger_loss1 = tf.square(danger_fn - danger_targets)
         danger_clipped = danger_preds + tf.clip_by_value(danger_fn - danger_preds, -vf_clip_param, vf_clip_param)
         danger_loss2 = tf.square(danger_clipped - danger_targets)
@@ -120,43 +125,44 @@ class PPOLoss:
                                      entropy_coeff * curr_entropy)
         self.loss = loss
 
+def get_loss(action_danger=False):
+    def ppo_surrogate_loss(policy, model, dist_class, train_batch):
+        logits, state = model.from_batch(train_batch)
+        action_dist = dist_class(logits, model)
 
-def ppo_surrogate_loss(policy, model, dist_class, train_batch):
-    logits, state = model.from_batch(train_batch)
-    action_dist = dist_class(logits, model)
+        mask = None
+        if state:
+            max_seq_len = tf.reduce_max(train_batch["seq_lens"])
+            mask = tf.sequence_mask(train_batch["seq_lens"], max_seq_len)
+            mask = tf.reshape(mask, [-1])
 
-    mask = None
-    if state:
-        max_seq_len = tf.reduce_max(train_batch["seq_lens"])
-        mask = tf.sequence_mask(train_batch["seq_lens"], max_seq_len)
-        mask = tf.reshape(mask, [-1])
+        policy.loss_obj = PPOLoss(
+            dist_class,
+            model,
+            train_batch[Postprocessing.VALUE_TARGETS],
+            train_batch[Postprocessing.ADVANTAGES],
+            train_batch[Postprocessing.DANGER_TARGETS],
+            train_batch[SampleBatch.ACTIONS],
+            train_batch[SampleBatch.ACTION_DIST_INPUTS],
+            train_batch[SampleBatch.ACTION_LOGP],
+            train_batch[SampleBatch.VF_PREDS],
+            train_batch[SampleBatch.DANGER_PREDS],
+            action_dist,
+            model.value_function(),
+            model.danger_score_function(),
+            policy.kl_coeff,
+            mask,
+            entropy_coeff=policy.entropy_coeff,
+            clip_param=policy.config["clip_param"],
+            vf_clip_param=policy.config["vf_clip_param"],
+            vf_loss_coeff=policy.config["vf_loss_coeff"],
+            danger_loss_coeff=policy.config["danger_loss_coeff"],
+            use_gae=policy.config["use_gae"],
+            action_danger=action_danger
+        )
 
-    policy.loss_obj = PPOLoss(
-        dist_class,
-        model,
-        train_batch[Postprocessing.VALUE_TARGETS],
-        train_batch[Postprocessing.ADVANTAGES],
-        train_batch[Postprocessing.DANGER_TARGETS],
-        train_batch[SampleBatch.ACTIONS],
-        train_batch[SampleBatch.ACTION_DIST_INPUTS],
-        train_batch[SampleBatch.ACTION_LOGP],
-        train_batch[SampleBatch.VF_PREDS],
-        train_batch[SampleBatch.DANGER_PREDS],
-        action_dist,
-        model.value_function(),
-        model.danger_score_function(),
-        policy.kl_coeff,
-        mask,
-        entropy_coeff=policy.entropy_coeff,
-        clip_param=policy.config["clip_param"],
-        vf_clip_param=policy.config["vf_clip_param"],
-        vf_loss_coeff=policy.config["vf_loss_coeff"],
-        danger_loss_coeff=policy.config["danger_loss_coeff"],
-        use_gae=policy.config["use_gae"],
-    )
-
-    return policy.loss_obj.loss
-
+        return policy.loss_obj.loss
+    return ppo_surrogate_loss
 
 def kl_and_loss_stats(policy, train_batch):
     return {
@@ -214,8 +220,8 @@ def postprocess_ppo_gae(policy,
         last_r,
         gamma=policy.config["gamma"],
         lambda_=policy.config["lambda"],
-        lambda_danger=policy.config["lambda_danger"],
-        gamma_danger_tail=policy.config["gamma_danger_tail"],
+        lambda_death=policy.config["lambda_death"],
+        gamma_death=policy.config["gamma_death"],
         danger_reward_coeff=policy.config["danger_reward_coeff"],
         env_max_step=policy.config["max_step"],
         use_gae=policy.config["use_gae"],
@@ -296,10 +302,25 @@ def setup_mixins(policy, obs_space, action_space, config):
     LearningRateSchedule.__init__(policy, config["lr"], config["lr_schedule"])
 
 
-PPOTFPolicy = build_tf_policy(
-    name="PPOTFPolicy",
+PPOTFStateDangerPolicy = build_tf_policy(
+    name="PPOTFStateDangerPolicy",
     get_default_config=lambda: ray.rllib.agents.ppo.ppo.DEFAULT_CONFIG,
-    loss_fn=ppo_surrogate_loss,
+    loss_fn=get_loss(action_danger=False),
+    stats_fn=kl_and_loss_stats,
+    extra_action_fetches_fn=value_and_danger_fetches,
+    postprocess_fn=postprocess_ppo_gae,
+    gradients_fn=clip_gradients,
+    before_init=setup_config,
+    before_loss_init=setup_mixins,
+    mixins=[
+        LearningRateSchedule, EntropyCoeffSchedule, KLCoeffMixin,
+        ValueNetworkMixin
+    ])
+
+PPOTFActionDangerPolicy = build_tf_policy(
+    name="PPOTFActionDangerPolicy",
+    get_default_config=lambda: ray.rllib.agents.ppo.ppo.DEFAULT_CONFIG,
+    loss_fn=get_loss(action_danger=True),
     stats_fn=kl_and_loss_stats,
     extra_action_fetches_fn=value_and_danger_fetches,
     postprocess_fn=postprocess_ppo_gae,
