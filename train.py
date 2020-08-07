@@ -5,6 +5,8 @@ import argparse
 import yaml
 import importlib
 
+
+from callbacks import CustomCallbacks
 from ppo import StateDangerPPOTrainer, ActionDangerPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
@@ -15,6 +17,7 @@ args.add_argument("--config", help="the config file path")
 args.add_argument("--tune-config", help="config for hyperparamter tuning")
 args.add_argument("--num-tune-runs", type=int, default=20, help="number of hyperparamter sets to test")
 args.add_argument("--action-danger", action="store_true", help="whether to calculate danger level using action instead of state")
+args.add_argument("--callback", action="store_true")
 
 args = args.parse_args()
 
@@ -34,6 +37,9 @@ else:
         trainer = ActionDangerPPOTrainer
     else:
         trainer = StateDangerPPOTrainer
+
+if args.callback:
+    config["callbacks"] = CustomCallbacks
 
 stop = None
 if "stop" in config:
