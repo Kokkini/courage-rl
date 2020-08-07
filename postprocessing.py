@@ -93,7 +93,7 @@ def compute_advantages(rollout,
 
 
 @DeveloperAPI
-def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_death=1.0, gamma_death=0.0, danger_reward_coeff=1, env_max_step=1000, use_gae=True,use_critic=True):
+def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_death=1.0, gamma_death=0.0, danger_reward_coeff=1, death_reward=0, env_max_step=1000, use_gae=True,use_critic=True):
     """
     Given a rollout, compute its value targets and the advantage.
 
@@ -127,7 +127,7 @@ def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_d
         traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
     traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
     if trajsize < env_max_step and last_r <= 0: # it died
-        traj[Postprocessing.DANGER_REWARD][-1] = -1.0
+        traj[Postprocessing.DANGER_REWARD][-1] = death_reward
         death[-1] = 1.0
 
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)

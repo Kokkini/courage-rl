@@ -25,6 +25,7 @@ DEFAULT_CONFIG = with_common_config({
     "gamma_death": 0.0,
     "max_step": 200,
     "lambda_death": 1.0,
+    "death_reward": 0.0,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
     "use_critic": True,

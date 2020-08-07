@@ -223,6 +223,7 @@ def postprocess_ppo_gae(policy,
         lambda_death=policy.config["lambda_death"],
         gamma_death=policy.config["gamma_death"],
         danger_reward_coeff=policy.config["danger_reward_coeff"],
+        death_reward=policy.config["death_reward"],
         env_max_step=policy.config["max_step"],
         use_gae=policy.config["use_gae"],
     )
