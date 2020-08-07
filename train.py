@@ -29,7 +29,7 @@ trainer = None
 if args.baseline:
     trainer = PPOTrainer
 else:
-    config["model"]["custom_config"]["action_danger"] = args.action_danger
+    config["model"]["custom_options"]["action_danger"] = args.action_danger
     if args.action_danger:
         trainer = ActionDangerPPOTrainer
     else:
@@ -44,5 +44,5 @@ if args.tune_config is None:
 else:
     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
     algo = tuning_module.algo
-
+    print(config)
     tune.run(trainer, config=config, search_alg=algo, stop=stop, num_samples=args.num_tune_runs)

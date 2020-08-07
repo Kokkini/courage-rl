@@ -21,8 +21,8 @@ model:
 max_step: 200
 danger_loss_coeff: 1.0
 danger_reward_coeff: 0.1
-gamma_danger_tail: 0.0
-lambda_danger: 1.0
+gamma_death: 0.0
+lambda_death: 1.0
 
 gamma: 0.9
 lambda: 0.95

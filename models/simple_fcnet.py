@@ -15,17 +15,12 @@ def make_base_model(x, layers, prefix):
 
 
 class SimpleFCNet(TFModelV2):
-    """
-    Network from IMPALA paper implemented in ModelV2 API.
-
-    Based on https://github.com/ray-project/ray/blob/master/rllib/models/tf/visionnet_v2.py
-    and https://github.com/openai/baselines/blob/9ee399f5b20cd70ac0a871927a6cf043b478193f/baselines/common/models.py#L28
-    """
-
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
-        self.action_danger = model_config.get("action_danger", False)
+        self.action_danger = model_config.get("custom_model_config", {}).get("action_danger", False)
+        print(f"model is using action danger: {self.action_danger}")
+        print(f"model_config: {model_config}")
         layers = [64, 128, 64]
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")

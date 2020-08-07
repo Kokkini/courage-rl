@@ -217,7 +217,7 @@ StateDangerPPOTrainer = build_trainer(
     name="PPO",
     default_config=DEFAULT_CONFIG,
     default_policy=PPOTFStateDangerPolicy,
-    get_policy_class=get_policy_class,
+    get_policy_class=lambda x: PPOTFStateDangerPolicy,
     execution_plan=execution_plan,
     validate_config=validate_config)
 
@@ -225,6 +225,6 @@ ActionDangerPPOTrainer = build_trainer(
     name="PPO",
     default_config=DEFAULT_CONFIG,
     default_policy=PPOTFActionDangerPolicy,
-    get_policy_class=get_policy_class,
+    get_policy_class=lambda x: PPOTFActionDangerPolicy,
     execution_plan=execution_plan,
     validate_config=validate_config)
