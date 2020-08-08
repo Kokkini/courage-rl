@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 
 from sample_batch import SampleBatch
+from envs.dangerous_maze_env import DangerousMazeEnv
 
 class CustomCallbacks(DefaultCallbacks):
     """
@@ -46,7 +47,8 @@ class CustomCallbacks(DefaultCallbacks):
                 metrics for the episode.
             kwargs: Forward compatibility placeholder.
         """
-        self.env = base_env.get_unwrapped()
+        # self.env = base_env.get_unwrapped()
+        pass
 
     def on_episode_step(self, worker: RolloutWorker, base_env: BaseEnv,
                         episode: MultiAgentEpisode, **kwargs):
@@ -148,16 +150,25 @@ class CustomCallbacks(DefaultCallbacks):
         #     if mean_reward > self.best_so_far:
         #         self.best_so_far = mean_reward
         #         trainer.save()
+        if self.env is None:
+            self.env = DangerousMazeEnv(config=result["config"]["env_config"])
         self.iter += 1
         all_states, base_state = self.env.get_all_states()
         # sample_obs = np.random.randint(0,255,(8*8*3,),np.uint8)
-        fetch = trainer.compute_action(all_states, full_fetch=True)
-        danger_score = fetch[SampleBatch.DANGER_PREDS]
+        danger_score = self.get_danger_score(trainer, all_states)
         img = self.visualize(base_state, danger_score)
         img = Image.fromarray(img)
         os.makedirs(self.img_log_dir, exist_ok=True)
         img.save(os.path.join(self.img_log_dir, f"danger_viz_{self.iter:03}.jpg"))
 
+    def get_danger_score(self, trainer, state_batch):
+        scores = []
+        for state in state_batch:
+            fetch = trainer.compute_action(state, full_fetch=True)
+            danger_score = fetch[2][SampleBatch.DANGER_PREDS]
+            scores.append(danger_score)
+        scores = np.array(scores).reshape([len(state_batch), -1])
+        return scores
 
     def visualize(self, base_state, danger_score):
         # get enlarged image of the base_state
