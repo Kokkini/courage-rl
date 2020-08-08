@@ -8,6 +8,7 @@ from ray.rllib.agents.callbacks import DefaultCallbacks
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import shutil
 
 from sample_batch import SampleBatch
 from envs.dangerous_maze_env import DangerousMazeEnv
@@ -30,6 +31,8 @@ class CustomCallbacks(DefaultCallbacks):
     env = None
     img_log_dir = "/content/imgs"
     iter = 0
+    if os.path.isdir(img_log_dir):
+        shutil.rmtree(img_log_dir)
 
     def on_episode_start(self, worker: RolloutWorker, base_env: BaseEnv,
                          policies: Dict[str, Policy],
