@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ray.tune import registry
 from PIL import Image
+from copy import deepcopy
 
 
 class DangerousMazeEnv(gym.Env):
@@ -111,10 +112,15 @@ class DangerousMazeEnv(gym.Env):
             c = "."
         return c
 
+    def char_assign_for_str(self, s, i, c):
+        foo = list(s)
+        foo[i] = c
+        return "".join(foo)
+
     def get_all_states(self):
         rep = deepcopy(self.string_rep)
         base_state, player_pos = self.state_from_string_rep(self.string_rep)
-        rep[player_pos[0]][player_pos[1]] = "."
+        rep[player_pos[0]] = self.char_assign_for_str(rep[player_pos[0]], player_pos[1], ".")
         base_state[player_pos[0], player_pos[1]] = self.char_map["."]
         all_states = []
         for row in range(len(rep)):

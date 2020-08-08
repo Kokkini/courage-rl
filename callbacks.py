@@ -176,7 +176,7 @@ class CustomCallbacks(DefaultCallbacks):
         small_size = enlarge_factor // 3
 
         img = Image.fromarray(base_state)
-        new_size = (base_state.state.shape[0] * enlarge_factor, base_state.state.shape[1] * enlarge_factor)
+        new_size = (base_state.shape[0] * enlarge_factor, base_state.shape[1] * enlarge_factor)
         img = img.resize(new_size, Image.NEAREST)
         img = np.array(img, np.uint8)
 
@@ -202,5 +202,5 @@ class CustomCallbacks(DefaultCallbacks):
                     pos = position_mapping[i]
                     score = danger_score[row, col, i]
                     color = np.array(np.clip(highest * score + lowest * (1-score), 0, 255), np.int32)
-                    img[anchor[0] + small_size*pos[0], anchor[1]+small_size*pos[1]] = np.tile(color, small_size*small_size).reshape([small_size, small_size, 3])
+                    img[anchor[0] + small_size*pos[0]:anchor[0] + small_size*pos[0] + small_size, anchor[1]+small_size*pos[1]:anchor[1]+small_size*pos[1]+small_size] = np.tile(color, small_size*small_size).reshape([small_size, small_size, 3])
         return img
