@@ -126,7 +126,7 @@ def compute_advantages_and_danger(rollout,last_r,gamma=0.99,lambda_=1.0,lambda_d
     if len(traj[SampleBatch.DANGER_PREDS].shape) > 1:
         traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
     traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
-    if trajsize < env_max_step and last_r <= 0: # it died
+    if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= 0: # it died
         traj[Postprocessing.DANGER_REWARD][-1] = death_reward
         death[-1] = 1.0
 
