@@ -105,7 +105,8 @@ class PPOLoss:
         danger_clipped = danger_preds + tf.clip_by_value(danger_fn - danger_preds, -vf_clip_param, vf_clip_param)
         danger_loss2 = tf.square(danger_clipped - danger_targets)
         danger_loss = tf.maximum(danger_loss1, danger_loss2)
-        # self.mean_danger_loss = reduce_mean_valid(danger_loss)
+        self.mean_danger_loss = reduce_mean_valid(danger_loss)
+        self.danger_fn = danger_fn
 
 
         if use_gae:
@@ -171,9 +172,17 @@ def kl_and_loss_stats(policy, train_batch):
         "total_loss": policy.loss_obj.loss,
         "policy_loss": policy.loss_obj.mean_policy_loss,
         "vf_loss": policy.loss_obj.mean_vf_loss,
+        "danger_loss": policy.loss_obj.mean_danger_loss,
         "vf_explained_var": explained_variance(
             train_batch[Postprocessing.VALUE_TARGETS],
             policy.model.value_function()),
+        "danger_explained_var": explained_variance(
+            train_batch[Postprocessing.DANGER_TARGETS],
+            policy.loss_obj.danger_fn),
+        "mean_danger_targets": tf.reduce_mean(
+            train_batch[Postprocessing.DANGER_TARGETS]),
+        "mean_danger": tf.reduce_mean(
+            policy.loss_obj.danger_fn),
         "kl": policy.loss_obj.mean_kl,
         "entropy": policy.loss_obj.mean_entropy,
         "entropy_coeff": tf.cast(policy.entropy_coeff, tf.float64),
