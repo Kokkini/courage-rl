@@ -1,7 +1,7 @@
 env: DangerousMaze
 env_config:
     death_penalty: False
-    level_file: /content/courage-rl/envs/8x8.txt
+    level_file: /content/courage-rl/envs/10x10.txt
     flat_obs: True
 stop:
     timesteps_total: 150000000
