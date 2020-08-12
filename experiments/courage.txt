@@ -1,7 +1,7 @@
 env: DangerousMaze
 env_config:
     death_penalty: False
-    level_file: /content/courage-rl/envs/10x10.txt
+    level_file: /content/courage-rl/envs/16x16.txt
     flat_obs: True
 stop:
     timesteps_total: 150000000
@@ -35,7 +35,7 @@ train_batch_size: 16384 # 2048 * 8
 kl_coeff: 0.0
 kl_target: 0.01
 vf_loss_coeff: 0.45
-entropy_coeff: 0.1
+entropy_coeff: 1
 clip_param: 0.2
 vf_clip_param: 0.1
 # If specified, clip the global norm of gradients by this amount.
