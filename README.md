@@ -47,5 +47,6 @@ path every time.
   <img width="400" src="https://github.com/Kokkini/courage-rl/blob/master/media/max%20reward%2016x16%20baseline%20vs%20courage.png">
 </p>
 
-Looking at the average reward, we can see that PPO converged to the reward of 1 while courage could get the reward of 10. Looking at the max reward, we can see
-that PPO didn't even stumble upon the 10 reward, it didn't know that the 10 reward existed.
+Looking at the average reward, we can see that PPO converged to the reward of 1 while courage could get the reward of 10. 
+
+Looking at the max reward, we can see that PPO didn't even stumble upon the 10 reward, it didn't know that the 10 reward existed. Courage discovered the 1 reward but wasn't stuck at that reward because its love for danger pulled it away.
