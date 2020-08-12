@@ -19,7 +19,10 @@ A courageous agent optimize for the following reward:
 
 r = c1 * r_env + c2 * r_courage
 
-where, r_env is the reward coming from the environment, r_courange is the courage reward, c1 and c2 are coefficients.
+where: 
+* r_env is the reward coming from the environment
+* r_courange is the courage reward
+* c1 and c2 are coefficients.
 
 ## Experiment 1: the path to success is paved with failure.
 
