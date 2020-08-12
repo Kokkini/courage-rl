@@ -31,16 +31,16 @@ class SimpleFCNet(TFModelV2):
         x_danger = make_base_model(x, layers, "danger")
         x = make_base_model(x, layers, "main")
 
-        logits = tf.keras.layers.Dense(units=num_outputs, name="pi")(x)
+        logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
         if self.action_danger:
             danger_score = tf.keras.layers.Dense(units=num_outputs,
                                                  name="danger_score", kernel_initializer="zeros",
-                                                 bias_initializer="zeros")(x_danger)
+                                                 use_bias=False)(x_danger)
         else:
             danger_score = tf.keras.layers.Dense(units=1,
                                                  name="danger_score", kernel_initializer="zeros",
-                                                 bias_initializer="zeros")(x_danger)
+                                                 use_bias=False)(x_danger)
 
         self.base_model = tf.keras.Model(inputs, [logits, value, danger_score])
         self.register_variables(self.base_model.variables)
