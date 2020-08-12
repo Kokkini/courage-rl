@@ -12,8 +12,7 @@ This definition can be changed based on the environment.
 
 With this formulation, a courageous agent will want to perform dangerous actions while avoiding actions leading to certain death (courageous but not foolish).
 When the agent perform dangerous actions for a while, its skills will get better, making the actions less and less dangerous. It will move on to other more dangerous actions
-and improve its skills there. Dangerous regions are the regions that needs the most skills and courage incentivises the agent to focus experience collections in those regions.
-This leads to better and more robust skills.
+and improve its skills there. Dangerous regions are the regions that needs the most skills and courage incentivises the agent to focus experience collections in those regions. This leads to better and more robust skills.
 
 A courageous agent optimize for the following reward:
 
@@ -23,6 +22,8 @@ where:
 * r_env is the reward coming from the environment
 * r_courange is the courage reward
 * c1 and c2 are coefficients.
+
+Courage is different from curiosity in that curiosity focuses on exploring less seen and less understood regions while courage focuses on exploring dangerous regions. They are not exclusive and both can be used at the same time on the same agent.
 
 ## Experiment 1: the path to success is paved with failure.
 
@@ -39,3 +40,11 @@ the yellow reward.
 This poses significant challenges for usual RL methods such as PPO because: If the agent chooses the dangerous path, it will encounter countless deaths and
 very few big reward, making the average reward of going in that path very low compared to the safe path to the small reward. PPO agents will choose the safe
 path every time.
+
+<p align="center">
+  <img width="400" src="https://github.com/Kokkini/courage-rl/blob/master/media/mean%20reward%2016x16%20baseline%20vs%20courage.png">
+  <img width="400" src="https://github.com/Kokkini/courage-rl/blob/master/media/max%20reward%2016x16%20baseline%20vs%20courage.png">
+</p>
+
+Looking at the average reward, we can see that PPO converged to the reward of 1 while courage could get the reward of 10. Looking at the max reward, we can see
+that PPO didn't even stumble upon the 10 reward, it didn't know that the 10 reward existed.
