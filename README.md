@@ -1,4 +1,5 @@
 # courage-rl
+Using courage as an intrinsic reward to explore dangerous regions in the state-action space
 
 ## Motivation
 Humans get better by tackling risky and challenging problems with courage. What will happen if we give courage to an AI agent? Let's find out
