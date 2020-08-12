@@ -50,3 +50,15 @@ path every time.
 Looking at the average reward, we can see that PPO converged to the reward of 1 while courage could get the reward of 10. 
 
 Looking at the max reward, we can see that PPO didn't even stumble upon the 10 reward, it didn't know that the 10 reward existed. Courage discovered the 1 reward but wasn't stuck at that reward because its love for danger pulled it away.
+
+Below is the visualization of the danger level of all 5 actions at each state. On each square in the environment, there is a cross, with each hand of the cross 
+corresponding to 4 actions up, down, left, right and the middle of the cross correspond to the action of staying still. Blue means low danger and yellow means high danger. 
+
+<p align="center">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/16x16.jpg">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/16x16%20courage.gif">
+</p>
+
+At first, there is a wave of yellow, that's when the agent explored randomly and died a lot, leading the many dangerous state-action pairs. After a while of
+exploration, the agent learned the skill to avoid death so the yellow died down, only actions that lead to certain death remain bright. Now, if we 
+look at where the new yellow actions pop up, we can see where the agent is exploring. It explored the whole maze and finally saw the 10 reward and converge as there is no danger left to excite it.
