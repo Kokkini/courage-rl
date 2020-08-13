@@ -6,7 +6,7 @@ Humans get better by tackling risky and challenging problems with courage. What 
 
 ## Formulation
 Definitions:
-* Death: Terminating and episode before the maximum number of steps in reached with a non-positive reward for the last action. 
+* Death: Terminating an episode before the maximum number of steps in reached with a non-positive reward for the last action. 
 This definition can be changed based on the environment.
 * Danger: the danger of a state-action pair is the average discounted death rate of trajectories containing that state-action pair.
 * Courage reward: if the next state is not death, courage reward is the danger of the state-action pair. If the next state is death, courage reward is death reward (a non-positive hyperparamter)
@@ -59,6 +59,5 @@ corresponding to 4 actions up, down, left, right and the middle of the cross cor
   <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/16x16%20courage.gif">
 </p>
 
-At first, there is a wave of yellow, that's when the agent explored randomly and died a lot, leading the many dangerous state-action pairs. After a while of
-exploration, the agent learned the skill to avoid death so the yellow died down, only actions that lead to certain death remain bright. Now, if we 
-look at where the new yellow actions pop up, we can see where the agent is exploring. It explored the whole maze and finally saw the 10 reward and converge as there is no danger left to excite it.
+At first, there is a wave of yellow, that's when the agent explored randomly and died a lot, leading to many state-action pairs being marked as dangerous. After a while of exploration, the agent learned the skill to avoid death so the yellow died down, only actions that lead to certain death remained bright. Now, if we 
+look at where the new yellow pop up, we can see where the agent is exploring. It explored the whole maze and finally saw the 10 reward and converge as there is no danger left to distract it.
