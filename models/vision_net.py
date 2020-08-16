@@ -10,7 +10,6 @@ def conv_layer(depth, name):
         filters=depth, kernel_size=3, strides=1, padding="same", name=name
     )
 
-
 def residual_block(x, depth, prefix):
     inputs = x
     assert inputs.get_shape()[-1].value == depth
@@ -19,7 +18,6 @@ def residual_block(x, depth, prefix):
     x = tf.keras.layers.ReLU()(x)
     x = conv_layer(depth, name=prefix + "_conv1")(x)
     return x + inputs
-
 
 def conv_sequence(x, depth, strides, prefix):
     x = conv_layer(depth, prefix + "_conv")(x)
@@ -37,7 +35,6 @@ def make_base_model(x, depths, strides, prefix):
     x = tf.keras.layers.Dense(units=256, activation="relu", name=f"{prefix}_hidden")(x)
     return x
 
-
 class VisionNet(TFModelV2):
     """
     Network from IMPALA paper implemented in ModelV2 API.
@@ -49,8 +46,12 @@ class VisionNet(TFModelV2):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
-        depths = [32, 32]
-        strides = [1,1]
+        self.state_danger = model_config.get("custom_model_config", {}).get("state_danger", False)
+        print(f"model is using state danger: {self.state_danger}")
+        print(f"model_config: {model_config}")
+        print(f"observation shape: {obs_space.shape}")
+        depths = [16, 32, 32]
+        strides = [2,2,2]
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
         scaled_inputs = tf.cast(inputs, tf.float32) / 255.0
@@ -60,9 +61,16 @@ class VisionNet(TFModelV2):
         x_danger = make_base_model(x, depths, strides, "danger")
         x = make_base_model(x, depths, strides, "main")
 
-        logits = tf.keras.layers.Dense(units=num_outputs, name="pi")(x)
+        logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
-        danger_score = tf.keras.layers.Dense(units=1, activation="sigmoid", name="danger_score")(x_danger)
+        if not self.state_danger:
+            danger_score = tf.keras.layers.Dense(units=num_outputs,
+                                                 name="danger_score", kernel_initializer="zeros",
+                                                 use_bias=False)(x_danger)
+        else:
+            danger_score = tf.keras.layers.Dense(units=1,
+                                                 name="danger_score", kernel_initializer="zeros",
+                                                 use_bias=False)(x_danger)
 
         self.base_model = tf.keras.Model(inputs, [logits, value, danger_score])
         self.register_variables(self.base_model.variables)
@@ -77,7 +85,10 @@ class VisionNet(TFModelV2):
         return tf.reshape(self._value, [-1])
 
     def danger_score_function(self):
-        return tf.reshape(self._danger_score, [-1])
+        if not self.state_danger:
+            return self._danger_score
+        else:
+            return tf.reshape(self._danger_score, [-1])
 
 # Register model in ModelCatalog
 ModelCatalog.register_custom_model("vision_net", VisionNet)

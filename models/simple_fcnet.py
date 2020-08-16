@@ -18,9 +18,10 @@ class SimpleFCNet(TFModelV2):
     def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
-        self.action_danger = model_config.get("custom_model_config", {}).get("action_danger", False)
-        print(f"model is using action danger: {self.action_danger}")
+        self.state_danger = model_config.get("custom_model_config", {}).get("state_danger", False)
+        print(f"model is using state danger: {self.state_danger}")
         print(f"model_config: {model_config}")
+        print(f"observation shape: {obs_space.shape}")
         layers = [64, 128, 64]
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
@@ -33,7 +34,7 @@ class SimpleFCNet(TFModelV2):
 
         logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x)
         value = tf.keras.layers.Dense(units=1, name="vf")(x)
-        if self.action_danger:
+        if not self.state_danger:
             danger_score = tf.keras.layers.Dense(units=num_outputs,
                                                  name="danger_score", kernel_initializer="zeros",
                                                  use_bias=False)(x_danger)
@@ -55,7 +56,7 @@ class SimpleFCNet(TFModelV2):
         return tf.reshape(self._value, [-1])
 
     def danger_score_function(self):
-        if self.action_danger:
+        if not self.state_danger:
             return self._danger_score
         else:
             return tf.reshape(self._danger_score, [-1])

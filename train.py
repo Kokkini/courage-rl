@@ -16,8 +16,9 @@ args.add_argument("--baseline", action="store_true", help="whether to use the ba
 args.add_argument("--config", help="the config file path")
 args.add_argument("--tune-config", help="config for hyperparamter tuning")
 args.add_argument("--num-tune-runs", type=int, default=20, help="number of hyperparamter sets to test")
-args.add_argument("--action-danger", action="store_true", help="whether to calculate danger level using action instead of state")
+args.add_argument("--state-danger", action="store_true", help="whether to calculate danger level for states instead of state-action pairs, default is state-action pairs")
 args.add_argument("--callback", action="store_true")
+args.add_argument("--visual_obs", action="store_true", help="whether the observation is visual (an image) or non visual (a vector), default is non visual")
 
 args = args.parse_args()
 
@@ -32,11 +33,16 @@ trainer = None
 if args.baseline:
     trainer = PPOTrainer
 else:
-    config["model"]["custom_options"]["action_danger"] = args.action_danger
-    if args.action_danger:
+    config["model"]["custom_options"]["state_danger"] = args.state_danger
+    if not args.state_danger:
         trainer = ActionDangerPPOTrainer
     else:
         trainer = StateDangerPPOTrainer
+
+    if args.visual_obs:
+        config["model"]["custom_model"] = "vision_net"
+    else:
+        config["model"]["custom_model"] = "simple_fcnet"
 
 if args.callback:
     config["callbacks"] = CustomCallbacks

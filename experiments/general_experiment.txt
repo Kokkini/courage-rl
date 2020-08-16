@@ -1,10 +1,6 @@
-env: DangerousMaze
-env_config:
-    death_penalty: False
-    level_file: /content/courage-rl/envs/16x16.txt
-    flat_obs: True
+env: Pong-v0
 stop:
-    timesteps_total: 150000000
+    timesteps_total: 10000000
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0.5
@@ -15,11 +11,11 @@ explore: True
 exploration_config:
     type: StochasticSampling
 model: 
-    custom_model: simple_fcnet
+    custom_model: vision_net
     custom_options: {}
 
 max_step: 200
-danger_loss_coeff: 0.1
+danger_loss_coeff: 1
 danger_reward_coeff: 1
 gamma_death: 0.9
 lambda_death: 1.0
@@ -37,7 +33,7 @@ kl_target: 0.01
 vf_loss_coeff: 0.45
 entropy_coeff: 0.1
 clip_param: 0.2
-vf_clip_param: 0.1
+vf_clip_param: null
 # If specified, clip the global norm of gradients by this amount.
 grad_clip: 0.5
 vf_share_layers: True
