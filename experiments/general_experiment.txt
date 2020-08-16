@@ -41,10 +41,10 @@ vf_share_layers: True
 # None means clip for Atari only.
 clip_rewards: null
 use_pytorch: False
-#evaluation_interval: 1
-#evaluation_num_episodes: 1
-#monitor: False
-#evaluation_config:
-    #explore: True
-    #monitor: True
-    #num_envs_per_worker: 1
+evaluation_interval: 1
+evaluation_num_episodes: 1
+monitor: False
+evaluation_config:
+    explore: True
+    monitor: True
+    num_envs_per_worker: 1
