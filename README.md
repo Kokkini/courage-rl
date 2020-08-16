@@ -73,11 +73,11 @@ pip install -r requirements.txt
 ## Run an experiment with in the lava maze environment:
 PPO + courage:
 ```
-python train.py --config="experiments/courage.txt" --callback
+python train.py --config="experiments/courage.txt"
 ```
 PPO without courage:
 ```
-python train.py --config="experiments/courage.txt" --callback --baseline
+python train.py --config="experiments/courage.txt" --baseline
 ```
 
 
