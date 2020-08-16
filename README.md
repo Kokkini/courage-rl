@@ -77,7 +77,7 @@ python train.py --config="experiments/courage.txt"
 ```
 PPO without courage:
 ```
-python train.py --config="experiments/courage.txt" --baseline
+python train.py --config="experiments/baseline.txt" --baseline
 ```
 
 
@@ -88,7 +88,7 @@ python train.py --config="experiments/general_experiment.txt" --visual_obs
 ```
 PPO without courage:
 ```
-python train.py --config="experiments/general_experiment.txt" --visual_obs --baseline
+python train.py --config="experiments/general_baseline_experiment.txt" --visual_obs --baseline
 ```
 
 The default Atari environment is MontezumaRevenge-v0. You can change the environment by changing the "env" variable in the config file "experiments/general_experiment.txt"
