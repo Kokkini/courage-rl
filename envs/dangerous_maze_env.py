@@ -6,6 +6,10 @@ from ray.tune import registry
 from PIL import Image
 from copy import deepcopy
 
+class Spec:
+    def __init__(self, max_episode_steps):
+        self.max_episode_steps = max_episode_steps
+
 
 class DangerousMazeEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -17,6 +21,7 @@ class DangerousMazeEnv(gym.Env):
     NO_OP = 4
     N_DISCRETE_ACTIONS = 5
     MAX_ITER = 200
+    spec = Spec(MAX_ITER)
 
     char_map = {
         "p": np.array([0, 0, 255], dtype=np.uint8),
