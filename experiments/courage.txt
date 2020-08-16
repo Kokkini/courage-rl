@@ -18,7 +18,6 @@ model:
     custom_model: simple_fcnet
     custom_options: {}
 
-max_step: 200
 danger_loss_coeff: 0.1
 danger_reward_coeff: 1
 gamma_death: 0.9

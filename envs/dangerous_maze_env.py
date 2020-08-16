@@ -9,7 +9,7 @@ from copy import deepcopy
 class Spec:
     def __init__(self, max_episode_steps):
         self.max_episode_steps = max_episode_steps
-
+        self.id = "DangerousMaze"
 
 class DangerousMazeEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -44,7 +44,6 @@ class DangerousMazeEnv(gym.Env):
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
-
         self.string_rep = self.get_string_rep(config["level_file"])
         self.original_obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
         self.obs_shape = self.original_obs_shape

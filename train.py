@@ -45,10 +45,6 @@ else:
     else:
         trainer = StateDangerPPOTrainer
 
-env = trainer(config={}, env=config["env"]).env_creator(config.get("env_config"))
-env_max_step = env.spec.max_episode_steps
-env.close()
-config["max_step"] = env_max_step
 
 if args.callback:
     config["callbacks"] = CustomCallbacks
@@ -56,6 +52,12 @@ if args.callback:
 stop = None
 if "stop" in config:
     stop = config.pop("stop")
+
+if not args.baseline:
+    env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
+    env_max_step = env.spec.max_episode_steps
+    env.close()
+    config["max_step"] = env_max_step
 
 print(config)
 
