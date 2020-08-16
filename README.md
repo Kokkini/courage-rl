@@ -93,7 +93,5 @@ python train.py --config="experiments/general_experiment.txt" --visual_obs --bas
 
 The default Atari environment is MontezumaRevenge-v0. You can change the environment by changing the "env" variable in the config file "experiments/general_experiment.txt"
 
-## Run an experiment
-
 ## Result
 The result of experiments are saved in ~/ray_results/PPO
