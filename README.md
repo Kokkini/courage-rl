@@ -61,3 +61,39 @@ corresponding to 4 actions up, down, left, right and the middle of the cross cor
 
 At first, there is a wave of yellow, that's when the agent explored randomly and died a lot, leading to many state-action pairs being marked as dangerous. After a while of exploration, the agent learned the skill to avoid death so the yellow died down, only actions that lead to certain death remained bright. Now, if we 
 look at where the new yellow pop up, we can see where the agent is exploring. It explored the whole maze and finally saw the 10 reward and converge as there is no danger left to distract it.
+
+# Try it out
+## Set up
+```
+git clone https://github.com/Kokkini/courage-rl.git
+cd courage-rl
+pip install -r requirements.txt
+```
+
+## Run an experiment with in the lava maze environment:
+PPO + courage:
+```
+python train.py --config="experiments/courage.txt" --callback
+```
+PPO without courage:
+```
+python train.py --config="experiments/courage.txt" --callback --baseline
+```
+
+
+## Run an experiment in Atari:
+PPO + courage:
+```
+python train.py --config="experiments/general_experiment.txt" --visual_obs
+```
+PPO without courage:
+```
+python train.py --config="experiments/general_experiment.txt" --visual_obs --baseline
+```
+
+The default Atari environment is MontezumaRevenge-v0. You can change the environment by changing the "env" variable in the config file "experiments/general_experiment.txt"
+
+## Run an experiment
+
+## Result
+The result of experiments are saved in ~/ray_results/PPO
