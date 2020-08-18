@@ -6,6 +6,7 @@ from ray.tune import registry
 from PIL import Image
 from copy import deepcopy
 import os 
+import sys
 
 class Spec:
     def __init__(self, max_episode_steps):
@@ -45,7 +46,8 @@ class DangerousMazeEnv(gym.Env):
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
-        this_dir = os.path.dirname(os.path.realpath(__file__))
+        current_module = sys.modules["envs"]
+        this_dir = os.path.dirname(os.path.realpath(current_module.__file__))
         self.string_rep = self.get_string_rep(os.path.join(this_dir, config["level_file"]))
         self.original_obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
         self.obs_shape = self.original_obs_shape
