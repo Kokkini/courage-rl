@@ -215,7 +215,7 @@ def execution_plan(workers, config):
 
 
 StateDangerPPOTrainer = build_trainer(
-    name="PPO",
+    name="StateDangerPPO",
     default_config=DEFAULT_CONFIG,
     default_policy=PPOTFStateDangerPolicy,
     get_policy_class=lambda x: PPOTFStateDangerPolicy,
@@ -223,7 +223,7 @@ StateDangerPPOTrainer = build_trainer(
     validate_config=validate_config)
 
 ActionDangerPPOTrainer = build_trainer(
-    name="PPO",
+    name="ActionDangerPPO",
     default_config=DEFAULT_CONFIG,
     default_policy=PPOTFActionDangerPolicy,
     get_policy_class=lambda x: PPOTFActionDangerPolicy,
