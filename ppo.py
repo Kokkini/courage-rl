@@ -27,6 +27,9 @@ DEFAULT_CONFIG = with_common_config({
     "lambda_death": 1.0,
     "death_reward": 0.0,
     "reward_discount_on_death": 0.95,
+    "use_curiosity": False,
+    "curiosity_reward_coeff": 0.1,
+    "curiosity_loss_coeff": 1,
     "use_death_reward": True,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).

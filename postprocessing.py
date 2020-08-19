@@ -17,6 +17,7 @@ class Postprocessing:
     VALUE_TARGETS = "value_targets"
     DANGER_TARGETS = "danger_targets"
     DANGER_REWARD = "danger_reward"
+    CURIOSITY_REWARD = "curiosity_reward"
 
 def get_one_each_row(arr, indices):
     return np.array([arr[enum, item] for enum, item in enumerate(indices)])
@@ -207,6 +208,7 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     use_gae = config["use_gae"]
     reward_discount_on_death = config["reward_discount_on_death"]
     use_death_reward = config["use_death_reward"]
+    curiosity_reward_coeff = config["curiosity_reward_coeff"]
 
     traj = {}
     trajsize = len(rollout[SampleBatch.ACTIONS])
@@ -222,6 +224,8 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
 
     if len(traj[SampleBatch.DANGER_PREDS].shape) > 1:
         traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
+
+
     traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
     if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= 0: # it died
         if use_death_reward:
@@ -232,8 +236,17 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
             traj[Postprocessing.DANGER_REWARD] *= discounts
         death[-1] = 1.0
 
+    curiosity_reward = 0
+    if traj[SampleBatch.ENCODING] is not None:
+        curiosity_reward = traj[SampleBatch.ENCODING] - traj[SampleBatch.ENCODING_RANDOM]
+        curiosity_reward = np.sqrt(np.mean(np.square(curiosity_reward), axis=1))
+        curiosity_reward = np.roll(curiosity_reward, -1)
+        curiosity_reward[-1] = 0
+
+    traj[Postprocessing.CURIOSITY_REWARD] = curiosity_reward
+
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)
-    traj[SampleBatch.REWARDS] += traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff
+    traj[SampleBatch.REWARDS] += traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff + traj[Postprocessing.CURIOSITY_REWARD] * curiosity_reward_coeff
 
 
     danger_pred_t = np.concatenate(

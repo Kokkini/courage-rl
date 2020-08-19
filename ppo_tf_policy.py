@@ -34,6 +34,8 @@ class PPOLoss:
                  curr_action_dist,
                  value_fn,
                  danger_fn,
+                 encoding_fn,
+                 encoding_targets,
                  cur_kl_coeff,
                  valid_mask,
                  entropy_coeff=0,
@@ -41,6 +43,8 @@ class PPOLoss:
                  vf_clip_param=0.1,
                  vf_loss_coeff=1.0,
                  danger_loss_coeff=1.0,
+                 curiosity_loss_coeff=1.0,
+                 use_curiosity=False,
                  use_gae=True,
                  action_danger=False):
         """Constructs the loss for Proximal Policy Objective.
@@ -108,6 +112,12 @@ class PPOLoss:
         self.mean_danger_loss = reduce_mean_valid(danger_loss)
         self.danger_fn = danger_fn
 
+        self.mean_curiosity_loss = 0
+        curiosity_loss = 0
+        if use_curiosity:
+            curiosity_loss = tf.square(encoding_fn - encoding_targets)
+            self.mean_curiosity_loss = reduce_mean_valid(curiosity_loss)
+
 
         if use_gae:
             vf_loss1 = tf.square(value_fn - value_targets)
@@ -118,7 +128,8 @@ class PPOLoss:
             self.mean_vf_loss = reduce_mean_valid(vf_loss)
             loss = reduce_mean_valid(
                 -surrogate_loss + cur_kl_coeff * action_kl +
-                vf_loss_coeff * vf_loss + danger_loss_coeff * danger_loss - entropy_coeff * curr_entropy)
+                vf_loss_coeff * vf_loss + danger_loss_coeff * danger_loss -
+                entropy_coeff * curr_entropy + curiosity_loss * curiosity_loss_coeff)
         else:
             self.mean_vf_loss = tf.constant(0.0)
             loss = reduce_mean_valid(-surrogate_loss +
@@ -138,30 +149,33 @@ def get_loss(action_danger=False):
             mask = tf.reshape(mask, [-1])
 
         policy.loss_obj = PPOLoss(
-            dist_class,
-            model,
-            train_batch[Postprocessing.VALUE_TARGETS],
-            train_batch[Postprocessing.ADVANTAGES],
-            train_batch[Postprocessing.DANGER_TARGETS],
-            train_batch[SampleBatch.ACTIONS],
-            train_batch[SampleBatch.ACTION_DIST_INPUTS],
-            train_batch[SampleBatch.ACTION_LOGP],
-            train_batch[SampleBatch.VF_PREDS],
-            train_batch[SampleBatch.DANGER_PREDS],
-            action_dist,
-            model.value_function(),
-            model.danger_score_function(),
-            policy.kl_coeff,
-            mask,
+            dist_class=dist_class,
+            model=model,
+            value_targets=train_batch[Postprocessing.VALUE_TARGETS],
+            advantages=train_batch[Postprocessing.ADVANTAGES],
+            danger_targets=train_batch[Postprocessing.DANGER_TARGETS],
+            actions=train_batch[SampleBatch.ACTIONS],
+            prev_logits=train_batch[SampleBatch.ACTION_DIST_INPUTS],
+            prev_actions_logp=train_batch[SampleBatch.ACTION_LOGP],
+            vf_preds=train_batch[SampleBatch.VF_PREDS],
+            danger_preds=train_batch[SampleBatch.DANGER_PREDS],
+            curr_action_dist=action_dist,
+            value_fn=model.value_function(),
+            danger_fn=model.danger_score_function(),
+            encoding_fn=model.get_encoding(),
+            encoding_targets=train_batch[Postprocessing.ENCODING_RANDOM],
+            cur_kl_coeff=policy.kl_coeff,
+            valid_mask=mask,
             entropy_coeff=policy.entropy_coeff,
             clip_param=policy.config["clip_param"],
             vf_clip_param=policy.config["vf_clip_param"],
             vf_loss_coeff=policy.config["vf_loss_coeff"],
             danger_loss_coeff=policy.config["danger_loss_coeff"],
+            curiosity_loss_coeff=policy.config["curiosity_loss_coeff"],
+            use_curiosity=policy.config["use_curiosity"],
             use_gae=policy.config["use_gae"],
             action_danger=action_danger
         )
-
         return policy.loss_obj.loss
     return ppo_surrogate_loss
 
@@ -200,7 +214,9 @@ def value_and_danger_fetches(policy):
     """Adds value function outputs to experience train_batches."""
     return {
         SampleBatch.VF_PREDS: policy.model.value_function(),
-        SampleBatch.DANGER_PREDS: policy.model.danger_score_function()
+        SampleBatch.DANGER_PREDS: policy.model.danger_score_function(),
+        SampleBatch.ENCODING: policy.model.get_encoding(),
+        SampleBatch.ENCODING_RANDOM: policy.model.get_encoding_random()
     }
 
 def postprocess_ppo_gae(policy,

@@ -49,6 +49,9 @@ class SampleBatch:
     VF_PREDS = "vf_preds"
     DANGER_PREDS = "danger_preds"
 
+    ENCODING = "encoding"
+    ENCODING_RANDOM = "encoding_random"
+
 
 
     @PublicAPI

@@ -47,11 +47,13 @@ class VisionNet(TFModelV2):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
         self.state_danger = model_config.get("custom_model_config", {}).get("state_danger", False)
+        use_curiosity = model_config.get("use_curiosity", False)
         print(f"model is using state danger: {self.state_danger}")
         print(f"model_config: {model_config}")
         print(f"observation shape: {obs_space.shape}")
         depths = [16, 32, 32]
         strides = [2,2,2]
+
 
         inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
         scaled_inputs = tf.cast(inputs, tf.float32) / 255.0
@@ -59,6 +61,15 @@ class VisionNet(TFModelV2):
         x = scaled_inputs
 
         x_danger = make_base_model(x, depths, strides, "danger")
+        encoding = None
+        encoding_random = None
+        if use_curiosity:
+            x_encode = make_base_model(x, depths, strides, "encode")
+            x_random = make_base_model(x, depths, strides, "random")
+            encoding_size = model_config["encoding_size"]
+            encoding = tf.keras.layers.Dense(units=encoding_size, name="encode_out", use_bias=False)(x_encode)
+            encoding_random = tf.keras.layers.Dense(units=encoding_size, name="encode_random_out", use_bias=False)(x_random)
+
         x = make_base_model(x, depths, strides, "main")
 
         logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x)
@@ -72,17 +83,23 @@ class VisionNet(TFModelV2):
                                                  name="danger_score", kernel_initializer="zeros",
                                                  use_bias=False)(x_danger)
 
-        self.base_model = tf.keras.Model(inputs, [logits, value, danger_score])
+        self.base_model = tf.keras.Model(inputs, [logits, value, danger_score, encoding, encoding_random])
         self.register_variables(self.base_model.variables)
 
     def forward(self, input_dict, state, seq_lens):
         # explicit cast to float32 needed in eager
         obs = tf.cast(input_dict["obs"], tf.float32)
-        logits, self._value, self._danger_score = self.base_model(obs)
+        logits, self._value, self._danger_score, self._encoding, self._encoding_random = self.base_model(obs)
         return logits, state
 
     def value_function(self):
         return tf.reshape(self._value, [-1])
+
+    def get_encoding(self):
+        return self._encoding
+
+    def get_encoding_random(self):
+        return self._encoding_random
 
     def danger_score_function(self):
         if not self.state_danger:

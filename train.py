@@ -59,6 +59,9 @@ if not args.baseline:
     env.close()
     config["max_step"] = env_max_step
 
+    if config.get("use_curiosity", False):
+        config["model"]["custom_options"]["use_curiosity"] = True
+
 print(config)
 
 if args.tune_config is None:
