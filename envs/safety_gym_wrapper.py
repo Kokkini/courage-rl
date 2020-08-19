@@ -2,15 +2,21 @@ import time
 import gym
 import numpy as np
 from ray.tune import registry
-import safety_gym
-from safety_gym.envs.engine import Engine
+
 
 
 class SafetyGymWrapper(gym.Env):
     def __init__(self, config):
         self.config = config
+        try:
+            import safety_gym
+            from safety_gym.envs.engine import Engine
+            env = Engine(self.config)
+        except Exception as e:
+            print(e)
+            print("safety gym not installed, using cartpole instead")
+            env = gym.make("CartPole-v0")
 
-        env = Engine(self.config)
         self.env = env
         # Enable video recording features
         self.metadata = self.env.metadata
