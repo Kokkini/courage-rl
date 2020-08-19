@@ -209,6 +209,7 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     reward_discount_on_death = config["reward_discount_on_death"]
     use_death_reward = config["use_death_reward"]
     curiosity_reward_coeff = config["curiosity_reward_coeff"]
+    use_curiosity = config["use_curiosity"]
 
     traj = {}
     trajsize = len(rollout[SampleBatch.ACTIONS])
@@ -237,7 +238,7 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
         death[-1] = 1.0
 
     curiosity_reward = 0
-    if traj[SampleBatch.ENCODING] is not None:
+    if use_curiosity:
         curiosity_reward = traj[SampleBatch.ENCODING] - traj[SampleBatch.ENCODING_RANDOM]
         curiosity_reward = np.sqrt(np.mean(np.square(curiosity_reward), axis=1))
         curiosity_reward = np.roll(curiosity_reward, -1)

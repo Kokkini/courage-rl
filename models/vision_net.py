@@ -62,8 +62,8 @@ class VisionNet(TFModelV2):
         x = scaled_inputs
 
         x_danger = make_base_model(x, depths, strides, "danger")
-        encoding = None
-        encoding_random = None
+        encoding = 0
+        encoding_random = 0
         if use_curiosity:
             x_encode = make_base_model(x, depths, strides, "encode")
             x_random = make_base_model(x, depths, strides, "random")
