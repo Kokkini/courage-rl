@@ -21,7 +21,7 @@ lambda_death: 1.0
 
 use_death_reward: False
 death_reward: 0.0
-reward_discount_on_death: 0.9
+reward_discount_on_death: 0.95
 
 
 gamma: 0.99
