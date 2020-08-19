@@ -224,17 +224,22 @@ def postprocess_ppo_gae(policy,
                                sample_batch[SampleBatch.ACTIONS][-1],
                                sample_batch[SampleBatch.REWARDS][-1],
                                *next_state)
+    # batch = compute_advantages_and_danger(
+    #     sample_batch,
+    #     last_r,
+    #     gamma=policy.config["gamma"],
+    #     lambda_=policy.config["lambda"],
+    #     lambda_death=policy.config["lambda_death"],
+    #     gamma_death=policy.config["gamma_death"],
+    #     danger_reward_coeff=policy.config["danger_reward_coeff"],
+    #     death_reward=policy.config["death_reward"],
+    #     env_max_step=policy.config["max_step"],
+    #     use_gae=policy.config["use_gae"],
+    # )
     batch = compute_advantages_and_danger(
         sample_batch,
         last_r,
-        gamma=policy.config["gamma"],
-        lambda_=policy.config["lambda"],
-        lambda_death=policy.config["lambda_death"],
-        gamma_death=policy.config["gamma_death"],
-        danger_reward_coeff=policy.config["danger_reward_coeff"],
-        death_reward=policy.config["death_reward"],
-        env_max_step=policy.config["max_step"],
-        use_gae=policy.config["use_gae"],
+        policy.config
     )
     return batch
 
