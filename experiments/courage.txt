@@ -16,7 +16,7 @@ exploration_config:
     type: StochasticSampling
 model: 
     custom_model: simple_fcnet
-    custom_options: {}
+    custom_model_config: {}
 
 danger_loss_coeff: 0.1
 danger_reward_coeff: 1

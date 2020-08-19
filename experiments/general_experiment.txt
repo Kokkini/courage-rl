@@ -12,7 +12,8 @@ exploration_config:
     type: StochasticSampling
 model: 
     custom_model: vision_net
-    custom_options: {}
+    custom_options:
+        curiosity_encoding_size: 128
 
 danger_loss_coeff: 0.1
 danger_reward_coeff: 0.1
@@ -23,7 +24,7 @@ use_death_reward: False
 death_reward: 0.0
 reward_discount_on_death: 0.95
 
-use_curiosity: False
+use_curiosity: True
 curiosity_reward_coeff: 0.1
 curiosity_loss_coeff: 1
 

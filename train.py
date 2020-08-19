@@ -54,13 +54,13 @@ if "stop" in config:
     stop = config.pop("stop")
 
 if not args.baseline:
+    if config.get("use_curiosity", False):
+        config["model"]["custom_options"]["use_curiosity"] = True
     env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
     env_max_step = env.spec.max_episode_steps
     env.close()
     config["max_step"] = env_max_step
 
-    if config.get("use_curiosity", False):
-        config["model"]["custom_options"]["use_curiosity"] = True
 
 print(config)
 

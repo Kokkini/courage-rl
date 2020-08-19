@@ -115,7 +115,7 @@ class PPOLoss:
         self.mean_curiosity_loss = 0
         curiosity_loss = 0
         if use_curiosity:
-            curiosity_loss = tf.square(encoding_fn - encoding_targets)
+            curiosity_loss = tf.reduce_mean(tf.square(encoding_fn - encoding_targets), axis=1)
             self.mean_curiosity_loss = reduce_mean_valid(curiosity_loss)
 
 
@@ -163,7 +163,7 @@ def get_loss(action_danger=False):
             value_fn=model.value_function(),
             danger_fn=model.danger_score_function(),
             encoding_fn=model.get_encoding(),
-            encoding_targets=train_batch[Postprocessing.ENCODING_RANDOM],
+            encoding_targets=train_batch[SampleBatch.ENCODING_RANDOM],
             cur_kl_coeff=policy.kl_coeff,
             valid_mask=mask,
             entropy_coeff=policy.entropy_coeff,

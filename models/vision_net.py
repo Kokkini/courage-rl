@@ -47,10 +47,11 @@ class VisionNet(TFModelV2):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
         print("LOADED CUSTOM MODEL")
         self.state_danger = model_config.get("custom_model_config", {}).get("state_danger", False)
-        use_curiosity = model_config.get("use_curiosity", False)
+        use_curiosity = model_config.get("custom_model_config", {}).get("use_curiosity", False)
         print(f"model is using state danger: {self.state_danger}")
         print(f"model_config: {model_config}")
         print(f"observation shape: {obs_space.shape}")
+        print(f"use curiosity: {use_curiosity}")
         depths = [16, 32, 32]
         strides = [2,2,2]
 
@@ -66,7 +67,7 @@ class VisionNet(TFModelV2):
         if use_curiosity:
             x_encode = make_base_model(x, depths, strides, "encode")
             x_random = make_base_model(x, depths, strides, "random")
-            encoding_size = model_config["encoding_size"]
+            encoding_size = model_config["custom_model_config"]["curiosity_encoding_size"]
             encoding = tf.keras.layers.Dense(units=encoding_size, name="encode_out", use_bias=False)(x_encode)
             encoding_random = tf.keras.layers.Dense(units=encoding_size, name="encode_random_out", use_bias=False)(x_random)
 
