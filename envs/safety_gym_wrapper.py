@@ -2,13 +2,17 @@ import time
 import gym
 import numpy as np
 from ray.tune import registry
+import yaml
 
 
 
 class SafetyGymWrapper(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
     def __init__(self, config):
-        self.config = config
+        with open(config["level_file"]) as f:
+            env_config = yaml.safe_load(f)
+
+        self.config = env_config
     
         import safety_gym
         from safety_gym.envs.engine import Engine
