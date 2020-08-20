@@ -62,8 +62,14 @@ class VisionNet(TFModelV2):
         x = scaled_inputs
 
         x_danger = make_base_model(x, depths, strides, "danger")
-        encoding = 0
-        encoding_random = 0
+        
+        x_main = make_base_model(x, depths, strides, "main")
+
+        logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x_main)
+        value = tf.keras.layers.Dense(units=1, name="vf")(x_main)
+        
+        encoding = logits * 0 #dummy values
+        encoding_random = logits * 0 #dummy values
         if use_curiosity:
             x_encode = make_base_model(x, depths, strides, "encode")
             x_random = make_base_model(x, depths, strides, "random")
@@ -71,10 +77,7 @@ class VisionNet(TFModelV2):
             encoding = tf.keras.layers.Dense(units=encoding_size, name="encode_out", use_bias=False)(x_encode)
             encoding_random = tf.keras.layers.Dense(units=encoding_size, name="encode_random_out", use_bias=False)(x_random)
 
-        x = make_base_model(x, depths, strides, "main")
-
-        logits = tf.keras.layers.Dense(units=num_outputs, name="pi", use_bias=False)(x)
-        value = tf.keras.layers.Dense(units=1, name="vf")(x)
+        
         if not self.state_danger:
             danger_score = tf.keras.layers.Dense(units=num_outputs,
                                                  name="danger_score", kernel_initializer="zeros",

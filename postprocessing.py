@@ -237,7 +237,7 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
             traj[Postprocessing.DANGER_REWARD] *= discounts
         death[-1] = 1.0
 
-    curiosity_reward = 0
+    curiosity_reward = np.array([0]*trajsize)
     if use_curiosity:
         curiosity_reward = traj[SampleBatch.ENCODING] - traj[SampleBatch.ENCODING_RANDOM]
         curiosity_reward = np.sqrt(np.mean(np.square(curiosity_reward), axis=1))
