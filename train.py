@@ -30,6 +30,11 @@ ray.init()
 with open(args.config) as f:
     config = yaml.safe_load(f)
 
+
+checkpoint_freq = config.pop("checkpoint_freq", 0)
+checkpoint_at_end = config.pop("checkpoint_at_end", False)
+keep_checkpoints_num = config.pop("keep_checkpoints_num", None)
+
 trainer = None
 cwd = os.path.dirname(os.path.realpath(__file__))
 
@@ -74,9 +79,9 @@ if not args.baseline:
 print(config)
 
 if args.tune_config is None:
-    tune.run(trainer, config=config, stop=stop)
+    tune.run(trainer, config=config, stop=stop, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)
 else:
     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
     algo = tuning_module.algo
     print(config)
-    tune.run(trainer, config=config, search_alg=algo, stop=stop, num_samples=args.num_tune_runs)
+    tune.run(trainer, config=config, search_alg=algo, stop=stop, num_samples=args.num_tune_runs, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)

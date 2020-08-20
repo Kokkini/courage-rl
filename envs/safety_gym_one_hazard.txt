@@ -10,7 +10,7 @@ lidar_max_dist: 10
 lidar_num_bins: 16
 hazards_num: 1
 randomize_layout: True
-hazards_locations: [[-2,1.5]]
+hazards_locations: [[-2,1]]
 hazards_size: 0.5
 hazards_keepout: 0.01
 goal_locations: [[2,0]]
