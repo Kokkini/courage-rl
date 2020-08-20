@@ -223,11 +223,17 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
 
     death = np.zeros(trajsize, dtype=np.float32)
 
-    if len(traj[SampleBatch.DANGER_PREDS].shape) > 1:
+    if len(traj[SampleBatch.DANGER_PREDS].shape) > 1: 
         traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
+        traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
+    else:
+        temp = traj[SampleBatch.DANGER_PREDS].copy()
+        temp = np.roll(temp, -1)
+        temp[-1] = 0
+        traj[Postprocessing.DANGER_REWARD] = temp
 
 
-    traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
+    
     if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= 0: # it died
         if use_death_reward:
             traj[Postprocessing.DANGER_REWARD][-1] = death_reward
