@@ -62,9 +62,13 @@ if not args.baseline:
     if config.get("use_curiosity", False):
         config["model"]["custom_options"]["use_curiosity"] = True
     env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
-    env_max_step = env.spec.max_episode_steps
+    if env.spec is not None:
+        env_max_step = env.spec.max_episode_steps
+    else:
+        env_max_step = env.max_steps
     env.close()
     config["max_step"] = env_max_step
+    print("env max step:", env_max_step)
 
 
 print(config)

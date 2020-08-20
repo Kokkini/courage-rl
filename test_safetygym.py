@@ -54,12 +54,14 @@ with open("experiments/road_width_baseline.txt") as f:
 
 print(config)
 env = SafetyGymWrapper(config)
+print(env.env.spec)
+print(env.env.__dict__)
 print(env.action_space)
 env.reset()
 
 while True:
     action = env.action_space.sample()
-    print("action:", action)
+    # print("action:", action)
     next_observation, reward, done, info = env.step(action)
     img = env.render(mode="human")#.astype(np.uint8)
     # print(img)

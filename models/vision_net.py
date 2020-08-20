@@ -48,10 +48,11 @@ class VisionNet(TFModelV2):
         print("LOADED CUSTOM MODEL")
         self.state_danger = model_config.get("custom_model_config", {}).get("state_danger", False)
         use_curiosity = model_config.get("custom_model_config", {}).get("use_curiosity", False)
+        print(f"use curiosity: {use_curiosity}")
         print(f"model is using state danger: {self.state_danger}")
         print(f"model_config: {model_config}")
         print(f"observation shape: {obs_space.shape}")
-        print(f"use curiosity: {use_curiosity}")
+        
         depths = [16, 32, 32]
         strides = [2,2,2]
 

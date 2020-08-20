@@ -8,6 +8,7 @@ import yaml
 
 class SafetyGymWrapper(gym.Env):
     metadata = {'render.modes': ['human', 'rgb_array']}
+
     def __init__(self, config):
         with open(config["level_file"]) as f:
             env_config = yaml.safe_load(f)
@@ -19,6 +20,7 @@ class SafetyGymWrapper(gym.Env):
         env = Engine(self.config)
 
         self.env = env
+        self.max_steps = env.config['num_steps']
         # Enable video recording features
         # self.metadata = self.env.metadata
 

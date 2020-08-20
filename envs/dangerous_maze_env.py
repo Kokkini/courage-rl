@@ -8,10 +8,10 @@ from copy import deepcopy
 import os 
 import sys
 
-class Spec:
-    def __init__(self, max_episode_steps):
-        self.max_episode_steps = max_episode_steps
-        self.id = "DangerousMaze"
+# class Spec:
+#     def __init__(self, max_episode_steps):
+#         self.max_episode_steps = max_episode_steps
+#         self.id = "DangerousMaze"
 
 class DangerousMazeEnv(gym.Env):
     """Custom Environment that follows gym interface"""
@@ -23,7 +23,7 @@ class DangerousMazeEnv(gym.Env):
     NO_OP = 4
     N_DISCRETE_ACTIONS = 5
     MAX_ITER = 200
-    spec = Spec(MAX_ITER)
+    # spec = Spec(MAX_ITER)
 
     char_map = {
         "p": np.array([0, 0, 255], dtype=np.uint8),
@@ -52,7 +52,7 @@ class DangerousMazeEnv(gym.Env):
         self.string_rep = self.get_string_rep(config["level_file"])
         self.original_obs_shape = (len(self.string_rep), len(self.string_rep[0]), 3)
         self.obs_shape = self.original_obs_shape
-
+        self.max_steps = MAX_ITER
         self.action_space = spaces.Discrete(self.N_DISCRETE_ACTIONS)
         # Example for using image as input:
 
