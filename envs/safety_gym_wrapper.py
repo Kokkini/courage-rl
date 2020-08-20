@@ -8,14 +8,10 @@ from ray.tune import registry
 class SafetyGymWrapper(gym.Env):
     def __init__(self, config):
         self.config = config
-        try:
-            import safety_gym
-            from safety_gym.envs.engine import Engine
-            env = Engine(self.config)
-        except Exception as e:
-            print(e)
-            print("safety gym not installed, using cartpole instead")
-            env = gym.make("CartPole-v0")
+    
+        import safety_gym
+        from safety_gym.envs.engine import Engine
+        env = Engine(self.config)
 
         self.env = env
         # Enable video recording features
@@ -24,6 +20,7 @@ class SafetyGymWrapper(gym.Env):
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
         self._done = True
+        self.done = True
 
     def reset(self):
         # assert self._done, "procgen envs cannot be early-restarted"
@@ -31,7 +28,11 @@ class SafetyGymWrapper(gym.Env):
 
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
+        print(info)
+        if info.get("cost_hazards", 0) > 0:
+            done = True
         self._done = done
+        self.done = done
         return obs, rew, done, info
 
     def render(self, mode="human"):
