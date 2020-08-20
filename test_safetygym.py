@@ -18,6 +18,8 @@
 import numpy as np
 from envs.safety_gym_wrapper import SafetyGymWrapper
 import yaml
+import gym
+print(gym.__path__)
 
 # config = {
 #     'robot_base': 'xmls/car.xml',
@@ -40,7 +42,7 @@ import yaml
 #     'goal_size': 0.5,
 #     'hazards_cost': 1.0,
 # }
-with open("experiments/road_width.txt") as f:
+with open("experiments/road_width_baseline.txt") as f:
     config = yaml.safe_load(f)
     
 
@@ -50,11 +52,18 @@ with open("experiments/road_width.txt") as f:
 
 print(config)
 env = SafetyGymWrapper(config)
+print(env.action_space)
 env.reset()
 
 while True:
     action = env.action_space.sample()
+    print("action:", action)
     next_observation, reward, done, info = env.step(action)
-    env.render()
+    img = env.render(mode="human")#.astype(np.uint8)
+    # print(img)
+    # print(img.shape)
+    # print(type(img))
+    # print(img.dtype)
+    # print(np.dtype(img))
     if done:
         env.reset()

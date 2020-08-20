@@ -6,6 +6,7 @@ from ray.tune import registry
 
 
 class SafetyGymWrapper(gym.Env):
+    metadata = {'render.modes': ['human', 'rgb_array']}
     def __init__(self, config):
         self.config = config
     
@@ -15,7 +16,7 @@ class SafetyGymWrapper(gym.Env):
 
         self.env = env
         # Enable video recording features
-        self.metadata = self.env.metadata
+        # self.metadata = self.env.metadata
 
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
@@ -28,15 +29,15 @@ class SafetyGymWrapper(gym.Env):
 
     def step(self, action):
         obs, rew, done, info = self.env.step(action)
-        print(info)
         if info.get("cost_hazards", 0) > 0:
             done = True
         self._done = done
         self.done = done
         return obs, rew, done, info
 
-    def render(self, mode="human"):
-        return self.env.render(mode=mode)
+    def render(self, mode='rgb_array', close=False):
+        size = 256
+        return self.env.render(mode=mode, camera_id=1, width=size, height=size)
 
     def close(self):
         return self.env.close()

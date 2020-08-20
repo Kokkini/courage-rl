@@ -18,7 +18,8 @@ args.add_argument("--tune-config", help="config for hyperparamter tuning")
 args.add_argument("--num-tune-runs", type=int, default=20, help="number of hyperparamter sets to test")
 args.add_argument("--state-danger", action="store_true", help="whether to calculate danger level for states instead of state-action pairs, default is state-action pairs")
 args.add_argument("--callback", action="store_true")
-args.add_argument("--visual_obs", action="store_true", help="whether the observation is visual (an image) or non visual (a vector), default is non visual")
+args.add_argument("--visual-obs", action="store_true", help="whether the observation is visual (an image) or non visual (a vector), default is non visual")
+args.add_argument("--level-file", default=None, help="path to level file")
 
 args = args.parse_args()
 
@@ -30,11 +31,15 @@ with open(args.config) as f:
     config = yaml.safe_load(f)
 
 trainer = None
+cwd = os.path.dirname(os.path.realpath(__file__))
 
 if args.visual_obs:
     config["model"]["custom_model"] = "vision_net"
 else:
     config["model"]["custom_model"] = "simple_fcnet"
+
+if args.level_file is not None:
+    config["env_config"]["level_file"] = os.path.join(cwd, args.level_file)
 
 if args.baseline:
     trainer = PPOTrainer

@@ -1,14 +1,13 @@
 env: DangerousMaze
 env_config:
     death_penalty: False
-    level_file: 16x16.txt
     flat_obs: True
 stop:
     timesteps_total: 150000000
 num_workers: 2
 num_cpus_per_worker: 0.5
-num_gpus: 0.5
-num_gpus_per_worker: 0.25
+num_gpus: 0
+num_gpus_per_worker: 0
 num_envs_per_worker: 32
 batch_mode: complete_episodes
 explore: True
