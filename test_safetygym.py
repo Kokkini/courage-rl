@@ -48,7 +48,7 @@ with open("experiments/road_width_baseline.txt") as f:
 
     # contents = f.read()
     # config = ast.literal_eval(contents)
-    level_file = "envs/safety_gym_one_hazard.txt"
+    level_file = "envs/safety_gym_road_and_field_eval.txt"
     config["env_config"]["level_file"] = level_file
     config = config["env_config"]
 
