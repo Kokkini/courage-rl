@@ -62,6 +62,92 @@ corresponding to 4 actions up, down, left, right and the middle of the cross cor
 At first, there is a wave of yellow, that's when the agent explored randomly and died a lot, leading to many state-action pairs being marked as dangerous. After a while of exploration, the agent learned the skill to avoid death so the yellow died down, only actions that lead to certain death remained bright. Now, if we 
 look at where the new yellow pop up, we can see where the agent is exploring. It explored the whole maze and finally saw the 10 reward and converge as there is no danger left to distract it.
 
+## Experiment 2: Generialization across environment parameters
+
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road.png">
+</p>
+
+
+<p align="center">
+  Environment for training with wide road
+</p>
+
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_test.png">
+</p>
+
+
+<p align="center">
+  Environment for evaluation with narrow road.
+</p>
+
+The goal is to drive the car to the green cylinder without touching the blue areas, which results in instant death.
+
+This experiment is still in progress but what I expect to see is:
+* The baseline PPO agent will not generalize to the evaluation environment with narrow roads
+* The courageous agent will generalize to the evaluation environment because in training, it spent time driving really close to the blue areas without touching them.
+
+
+## Experiment 3: Generialization across changes in dangerous zone positions
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/car_in_box.png">
+</p>
+
+
+<p align="center">
+  Environment for training with no obstacle blocking the way
+</p>
+
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/car_in_box_eval.png">
+</p>
+
+
+<p align="center">
+  Environment for evaluation with a blocking obstacle
+</p>
+
+The goal is to drive the car to the green cylinder without touching the blue areas, which results in instant death.
+
+This experiment is still in progress but what I expect to see is:
+* The baseline PPO agent will not generalize
+* The courageous agent will generalize to the evaluation environment because in training, it spent time driving really close to the blue areas without touching them.
+
+
+## Experiment 4: Generialization across changes in goal positions
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/road_and_field.png">
+</p>
+
+
+<p align="center">
+  Environment for training with the goal randomly generated in the big yard below
+</p>
+
+
+<p align="center">
+  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/road_and_field_eval.png">
+</p>
+
+
+<p align="center">
+  Environment for evaluation with the goal randomly generated in the narrow path above
+</p>
+
+The goal is to drive the car to the green cylinder without touching the blue areas, which results in instant death.
+
+This experiment is still in progress but what I expect to see is:
+* The baseline PPO agent will not generalize because it rarely set foot in the dangerous narrow path.
+* The courageous agent will generalize to the evaluation environment because in training, it explored the dangerous narrow path well.
+
+
+
 # Try it out
 ## Set up
 ```
