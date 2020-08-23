@@ -211,6 +211,11 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     curiosity_reward_coeff = config["curiosity_reward_coeff"]
     use_curiosity = config["use_curiosity"]
 
+    # TO DO: add this to configuration file
+    use_fixed_courage_reward = True
+    fixed_death_cost_multiplier = 10
+    death_threshold = 0.1
+
     traj = {}
     trajsize = len(rollout[SampleBatch.ACTIONS])
     for key in rollout:
@@ -223,18 +228,17 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
 
     death = np.zeros(trajsize, dtype=np.float32)
 
-    if len(traj[SampleBatch.DANGER_PREDS].shape) > 1: 
+    if len(traj[SampleBatch.DANGER_PREDS].shape) > 1: #action danger
         traj[SampleBatch.DANGER_PREDS] = get_one_each_row(traj[SampleBatch.DANGER_PREDS], traj[SampleBatch.ACTIONS])
         traj[Postprocessing.DANGER_REWARD] = traj[SampleBatch.DANGER_PREDS].copy()
-    else:
+    else: #state danger
         temp = traj[SampleBatch.DANGER_PREDS].copy()
         temp = np.roll(temp, -1)
         temp[-1] = 0
         traj[Postprocessing.DANGER_REWARD] = temp
 
 
-    
-    if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= 0: # it died
+    if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= death_threshold: # it died
         if use_death_reward:
             traj[Postprocessing.DANGER_REWARD][-1] = death_reward
         else:
@@ -242,6 +246,20 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
             discounts = np.flip(discounts, axis=0)
             traj[Postprocessing.DANGER_REWARD] *= discounts
         death[-1] = 1.0
+
+
+    # everthing that fixed courage reward add:
+    
+    if use_fixed_courage_reward:
+        if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= death_threshold: # it died
+            small_reward = 1/trajsize
+            danger_reward = np.array([small_reward] * trajsize)
+            danger_reward[-1] = -fixed_death_cost_multiplier * small_reward
+            traj[Postprocessing.DANGER_REWARD] = danger_reward
+    
+    #####################
+
+
 
     curiosity_reward = np.array([0]*trajsize)
     if use_curiosity:
