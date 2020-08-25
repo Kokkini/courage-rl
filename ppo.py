@@ -31,6 +31,11 @@ DEFAULT_CONFIG = with_common_config({
     "curiosity_reward_coeff": 0.1,
     "curiosity_loss_coeff": 1,
     "use_death_reward": True,
+    "fixed_death_cost_multiplier": 10,
+    "danger_reward_coeff_schedule": None,
+    "period": 50,
+    "ext_reward_coeff": 1,
+    "ext_reward_coeff_schedule": None,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
     "use_critic": True,

@@ -15,26 +15,44 @@ import shelve
 
 import gym
 import gym.wrappers
-import ray
+
 from ray.rllib.env import MultiAgentEnv
 from ray.rllib.env.base_env import _DUMMY_AGENT_ID
 from ray.rllib.utils.spaces.space_utils import flatten_to_single_ndarray
-from ray.tune.utils import merge_dicts
 
 from ray.rllib.evaluation.worker_set import WorkerSet
 from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 
+from callbacks import CustomCallbacks
 from ppo import StateDangerPPOTrainer, ActionDangerPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
+import numpy as np
+import pandas as pd
+
+
 
 args = argparse.ArgumentParser()
+args.add_argument("--config", help="the config file path")
+args.add_argument("--tune-config", help="config for hyperparamter tuning")
+args.add_argument("--state-danger", action="store_true", help="whether to calculate danger level for states instead of state-action pairs, default is state-action pairs")
+args.add_argument("--visual-obs", action="store_true", help="whether the observation is visual (an image) or non visual (a vector), default is non visual")
+args.add_argument("--level-file", default=None, help="path to level file")
+args.add_argument("--rollout-level-file", default=None, help="path to level file in rollout")
+args.add_argument("--summary-file")
 args.add_argument("--baseline", action="store_true", help="whether to use the baseline ppo method")
-args.add_argument("--checkpoint", help="path to checkpoint file")
-args.add_argument("--num-levels", default=5, type=int)
+args.add_argument("--num-rollout-levels", default=20, type=int)
+
+
 args.add_argument("--out")
-args.add_argument("--video-dir", default=None)
+# args.add_argument("--video-dir", default=None)
+args.add_argument("--save-video", action="store_true")
 args.add_argument("--deterministic", action="store_true")
+args.add_argument("--callback", action="store_true")
+
+
+
+
 
 args = args.parse_args()
 
@@ -302,28 +320,7 @@ def rollout(agent,
     return episode_rewards, episode_lengths
 
 
-
-load_envs(os.getcwd()) # Load envs
-load_models(os.getcwd()) # Load models
-
-ray.init()
-
-# checkpoint_freq = config.pop("checkpoint_freq", 0)
-# checkpoint_at_end = config.pop("checkpoint_at_end", False)
-# keep_checkpoints_num = config.pop("keep_checkpoints_num", None)
-
-trainer = None
-# cwd = os.path.dirname(os.path.realpath(__file__))
-
-# if args.visual_obs:
-#     config["model"]["custom_model"] = "vision_net"
-# else:
-#     config["model"]["custom_model"] = "simple_fcnet"
-
-# if args.level_file is not None:
-#     config["env_config"]["level_file"] = os.path.join(cwd, args.level_file)
-
-def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=False, video_dir=None):
+def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=False, level_file=None, save_video=False):
     config = {}
     # Load configuration from checkpoint file.
     config_dir = os.path.dirname(checkpoint_path)
@@ -342,7 +339,7 @@ def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=F
     evaluation_config = copy.deepcopy(config.get("evaluation_config", {}))
     config = merge_dicts(config, evaluation_config)
 
-    if video_dir:
+    if save_video:
         config["env_config"]["render_mode"] = "rgb_array"
 
     # config["env_config"]["num_levels"] = num_levels
@@ -350,6 +347,10 @@ def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=F
 
     config["evaluation_interval"] = 0
     config["monitor"] = False
+
+
+    if level_file is not None:
+        config["env_config"]["level_file"] = os.path.join(cwd, level_file)
 
     print(config)
 
@@ -367,18 +368,145 @@ def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=F
     restored_trainer.restore(checkpoint_path)
     return restored_trainer, config
 
-num_steps = None
-num_levels = args.num_levels
-restored_trainer, config = restore_agent(args.checkpoint, args.baseline, args.num_levels, args.deterministic, args.video_dir)
 
-# Do the actual rollout.
-with RolloutSaver(
-        args.out,
-        False,
-        write_update_file=False,
-        target_steps=num_steps,
-        target_episodes=num_levels,
-        save_info=False) as saver:
-    result = rollout(restored_trainer, config["env"], num_steps, num_levels, saver, True, args.video_dir)
 
-print(result)
+load_envs(os.getcwd()) # Load envs
+load_models(os.getcwd()) # Load models
+
+ray.init()
+with open(args.config) as f:
+    config = yaml.safe_load(f)
+
+checkpoint_freq = config.pop("checkpoint_freq", 0)
+checkpoint_at_end = config.pop("checkpoint_at_end", False)
+keep_checkpoints_num = config.pop("keep_checkpoints_num", None)
+
+trainer = None
+cwd = os.path.dirname(os.path.realpath(__file__))
+
+if args.visual_obs:
+    config["model"]["custom_model"] = "vision_net"
+else:
+    config["model"]["custom_model"] = "simple_fcnet"
+
+if args.level_file is not None:
+    config["env_config"]["level_file"] = os.path.join(cwd, args.level_file)
+
+if args.baseline:
+    trainer = PPOTrainer
+else:
+    config["model"]["custom_options"]["state_danger"] = args.state_danger
+    if not args.state_danger:
+        trainer = ActionDangerPPOTrainer
+    else:
+        trainer = StateDangerPPOTrainer
+
+
+if args.callback:
+    config["callbacks"] = CustomCallbacks
+
+stop = None
+if "stop" in config:
+    stop = config.pop("stop")
+
+if not args.baseline:
+    if config.get("use_curiosity", False):
+        config["model"]["custom_options"]["use_curiosity"] = True
+    env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
+    if env.spec is not None:
+        env_max_step = env.spec.max_episode_steps
+    else:
+        env_max_step = env.max_steps
+    env.close()
+    config["max_step"] = env_max_step
+    print("env max step:", env_max_step)
+
+
+print(config)
+
+def deep_dict_merge(dct, merge_dct):
+    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
+    updating only top-level keys, dict_merge recurses down into dicts nested
+    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
+    ``dct``.
+    :param dct: dict onto which the merge is executed
+    :param merge_dct: dct merged into dct
+    :return: None
+    """
+    for k, v in merge_dct.items():
+        if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):
+            deep_dict_merge(dct[k], merge_dct[k])
+        else:
+            dct[k] = merge_dct[k]
+
+def flatten_dict(dd, separator ='.', prefix =''): 
+    return { prefix + separator + k if prefix else k : v 
+            for kk, vv in dd.items() 
+            for k, v in flatten_dict(vv, separator, kk).items() 
+            } if isinstance(dd, dict) else { prefix : dd } 
+
+def get_last_checkpoint(path):
+    highest = -1
+    for d in os.listdir(path):
+        if "checkpoint" in d:
+            checkpoint_id = int(d.split("_")[-1])
+            highest = max(highest, checkpoint_id)
+    if highest == -1:
+        return None
+    return os.path.join(path, f"checkpoint_{highest}", f"checkpoint-{highest}")
+
+def train_and_rollout(config):
+    train_result = tune.run(trainer, config=config, stop=stop, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end,
+             keep_checkpoints_num=keep_checkpoints_num)
+    train_log_dir = list(train_result._trial_dataframes.keys())[0]
+    last_checkpoint = get_last_checkpoint(train_log_dir)
+
+    restored_agent, rollout_config = restore_agent(last_checkpoint, args.baseline, args.num_rollout_levels, args.deterministic, args.rollout_level_file, args.save_video)
+    
+    num_steps = None
+    num_levels = args.num_rollout_levels
+    saver=None
+    video_dir = None
+    if args.save_video:
+        video_dir = os.path.join(train_log_dir, "videos")
+    rewards, lengths = rollout(restored_agent, rollout_config["env"], num_steps, num_levels, saver, True, video_dir)
+    return last_checkpoint, rewards, lengths
+
+    # loss = tuner.main(model_root_dir=f"models/m_{random.randint(0,10000000)}", learning_rate=config["lr"], loss_name=config["loss_name"], kernel_size=config["kernel_size"],
+    #                   strides=config["strides"], num_filters=config["num_filters"], dense_width=config["dense_width"],
+    #                   num_cnn_layers=config["num_cnn_layers"], num_dense_layers=2, dropout_rate=config["dropout_rate"],
+    #                   window=config["window"], horizon=1, num_epochs=30, batch_size=128)
+    # print(f"mean loss: {loss}")
+    # reporter(mean_loss=loss)
+
+# if args.tune_config is None:
+#     tune.run(trainer, config=config, stop=stop, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)
+# else:
+#     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
+#     algo = tuning_module.algo
+#     print(config)
+#     tune.run(trainer, config=config, search_alg=algo, stop=stop, num_samples=args.num_tune_runs, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)
+
+tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
+tune_config_list = tuning_module.config_list
+print("tune_config_list:",tune_config_list)
+
+df = pd.DataFrame()
+# pd.concat([s1, s2], ignore_index=True)
+for c in tune_config_list:
+    deep_dict_merge(config, c)
+    print("#"*20)
+    print(config)
+    last_checkpoint, rewards, lengths = train_and_rollout(config)
+    result_dict = flatten_dict(c)
+    result_dict["checkpoint_path"] = last_checkpoint
+    result_dict["rewards"] = rewards
+    result_dict["lengths"] = lengths
+    result_dict["mean_reward"] = np.mean(rewards)
+    result_dict["mean_length"] = np.mean(lengths)
+    for k, v in result_dict.items():
+        result_dict[k] = [v]
+    df = pd.concat([df, pd.DataFrame(result_dict)], ignore_index=True)
+    df.to_csv(args.summary_file, index=False)
+
+df.to_csv(args.summary_file, index=False)

@@ -1,17 +1,5 @@
-from envs.dangerous_maze_env import DangerousMazeEnv
-import numpy as np
-from PIL import Image
+import numpy as np 
 
-config = {"level_file": "envs/6x6.txt", "death_penalty": True}
-env = DangerousMazeEnv(config)
-img = env.render()
-img = Image.fromarray(img)
-img.save("media/6x6.jpg")
-for i in range(10000):
-    state, reward, done, info = env.step(np.random.randint(4))
-    print(reward)
-    env.render()
-    if done:
-        env.reset()
-        env.render()
-
+a = np.array([1,2,3,4,5,6,7,8,9])
+a[-3:] = 0
+print(a)

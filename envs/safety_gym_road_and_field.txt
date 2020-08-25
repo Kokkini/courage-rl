@@ -1,5 +1,5 @@
 robot_base: xmls/car.xml
-num_steps: 3000
+num_steps: 1000
 robot_locations: [[-2,1]]
 robot_rot: 1.57
 task: goal

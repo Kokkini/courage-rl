@@ -180,6 +180,18 @@ def compute_advantages(rollout,
 #         "Rollout stacked incorrectly!"
 #     return SampleBatch(traj)
 
+def period_reward(rewards, period, death, total_period_reward, death_cost):
+    rewards = rewards.copy()
+    if death[-1] == 1.0:
+        step_reward = total_period_reward / period
+        rewards[-period:] = step_reward
+        rewards[-1] = - death_cost
+    else:
+        rewards = rewards * 0
+    return rewards
+
+
+
 @DeveloperAPI
 def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     """
@@ -210,11 +222,15 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     use_death_reward = config["use_death_reward"]
     curiosity_reward_coeff = config["curiosity_reward_coeff"]
     use_curiosity = config["use_curiosity"]
+    fixed_death_cost_multiplier = config["fixed_death_cost_multiplier"]
+    period = config["period"]
 
     # TO DO: add this to configuration file
     use_fixed_courage_reward = True
-    fixed_death_cost_multiplier = 10
+    # fixed_death_cost_multiplier = 10
     death_threshold = 0.1
+    total_period_reward = 1
+    death_cost = 0.2
 
     traj = {}
     trajsize = len(rollout[SampleBatch.ACTIONS])
@@ -251,14 +267,14 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     # everthing that fixed courage reward add:
     
     if use_fixed_courage_reward:
-        if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= death_threshold: # it died
-            small_reward = 1/trajsize
-            danger_reward = np.array([small_reward] * trajsize)
-            danger_reward[-1] = -fixed_death_cost_multiplier * small_reward
-            traj[Postprocessing.DANGER_REWARD] = danger_reward
-    
+        # if trajsize < env_max_step and traj[SampleBatch.REWARDS][-1] <= death_threshold: # it died
+        #     small_reward = 1/trajsize
+        #     danger_reward = np.array([small_reward] * trajsize)
+        #     danger_reward[-1] = -fixed_death_cost_multiplier * small_reward
+        #     traj[Postprocessing.DANGER_REWARD] = danger_reward
+        
+        traj[Postprocessing.DANGER_REWARD] = period_reward(traj[Postprocessing.DANGER_REWARD], period, death, total_period_reward, death_cost)
     #####################
-
 
 
     curiosity_reward = np.array([0]*trajsize)
@@ -271,7 +287,9 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     traj[Postprocessing.CURIOSITY_REWARD] = curiosity_reward
 
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)
-    traj[SampleBatch.REWARDS] += traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff + traj[Postprocessing.CURIOSITY_REWARD] * curiosity_reward_coeff
+    danger_reward_coeff = traj[SampleBatch.DANGER_REWARD_COEFF][-1]
+    ext_reward_coeff = traj[SampleBatch.EXT_REWARD_COEFF][-1]
+    traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS] * ext_reward_coeff + traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff + traj[Postprocessing.CURIOSITY_REWARD] * curiosity_reward_coeff
 
 
     danger_pred_t = np.concatenate(

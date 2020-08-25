@@ -58,6 +58,8 @@ class SimpleFCNet(TFModelV2):
                                                  use_bias=False)(x_danger)
 
         self.base_model = tf.keras.Model(inputs, [logits, value, danger_score, encoding, encoding_random])
+
+        
         self.register_variables(self.base_model.variables)
 
     def forward(self, input_dict, state, seq_lens):

@@ -51,7 +51,8 @@ class SampleBatch:
 
     ENCODING = "encoding"
     ENCODING_RANDOM = "encoding_random"
-
+    DANGER_REWARD_COEFF = "danger_reward_coeff"
+    EXT_REWARD_COEFF = "ext_reward_coeff"
 
 
     @PublicAPI

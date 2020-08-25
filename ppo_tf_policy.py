@@ -7,10 +7,13 @@ from ray.rllib.policy.tf_policy_template import build_tf_policy
 from ray.rllib.utils.explained_variance import explained_variance
 from ray.rllib.utils.tf_ops import make_tf_callable
 from ray.rllib.utils import try_import_tf
-
+from ray.rllib.policy.policy import Policy
+from ray.rllib.utils.annotations import override, DeveloperAPI
+from ray.rllib.utils.schedules import ConstantSchedule, PiecewiseSchedule
 
 from postprocessing import compute_advantages, compute_advantages_and_danger, Postprocessing
 from sample_batch import SampleBatch
+
 
 print("LOADED CUSTOM POLICY")
 
@@ -187,6 +190,8 @@ def kl_and_loss_stats(policy, train_batch):
         "policy_loss": policy.loss_obj.mean_policy_loss,
         "vf_loss": policy.loss_obj.mean_vf_loss,
         "danger_loss": policy.loss_obj.mean_danger_loss,
+        "cur_danger_reward_coeff": tf.cast(policy.danger_reward_coeff, tf.float64),
+        "cur_ext_reward_coeff": tf.cast(policy.ext_reward_coeff, tf.float64),
         "vf_explained_var": explained_variance(
             train_batch[Postprocessing.VALUE_TARGETS],
             policy.model.value_function()),
@@ -216,7 +221,9 @@ def value_and_danger_fetches(policy):
         SampleBatch.VF_PREDS: policy.model.value_function(),
         SampleBatch.DANGER_PREDS: policy.model.danger_score_function(),
         SampleBatch.ENCODING: policy.model.get_encoding(),
-        SampleBatch.ENCODING_RANDOM: policy.model.get_encoding_random()
+        SampleBatch.ENCODING_RANDOM: policy.model.get_encoding_random(),
+        SampleBatch.DANGER_REWARD_COEFF: tf.zeros(tf.shape(policy.model.value_function())[0]) + tf.cast(policy.danger_reward_coeff, tf.float32),
+        SampleBatch.EXT_REWARD_COEFF: tf.zeros(tf.shape(policy.model.value_function())[0]) + tf.cast(policy.ext_reward_coeff, tf.float32)
     }
 
 def postprocess_ppo_gae(policy,
@@ -325,12 +332,76 @@ def setup_config(policy, obs_space, action_space, config):
     config["model"]["vf_share_layers"] = config["vf_share_layers"]
 
 
+@DeveloperAPI
+class DangerRewardCoeffSchedule:
+    @DeveloperAPI
+    def __init__(self, danger_reward_coeff, danger_reward_coeff_schedule):
+        self.danger_reward_coeff = tf.get_variable("danger_reward_coeff", initializer=float(danger_reward_coeff), trainable=False)
+
+        if danger_reward_coeff_schedule is None:
+            self.danger_reward_coeff_schedule = ConstantSchedule(
+                danger_reward_coeff, framework=None)
+        else:
+            # Allows for custom schedule similar to lr_schedule format
+            if isinstance(danger_reward_coeff_schedule, list):
+                self.danger_reward_coeff_schedule = PiecewiseSchedule(
+                    danger_reward_coeff_schedule,
+                    outside_value=danger_reward_coeff_schedule[-1][-1],
+                    framework=None)
+            else:
+                # Implements previous version but enforces outside_value
+                self.danger_reward_coeff_schedule = PiecewiseSchedule(
+                    [[0, danger_reward_coeff], [danger_reward_coeff_schedule, 0.0]],
+                    outside_value=0.0,
+                    framework=None)
+
+    @override(Policy)
+    def on_global_var_update(self, global_vars):
+        super(DangerRewardCoeffSchedule, self).on_global_var_update(global_vars)
+        self.danger_reward_coeff.load(
+            self.danger_reward_coeff_schedule.value(global_vars["timestep"]),
+            session=self._sess)
+
+
+@DeveloperAPI
+class ExtRewardCoeffSchedule:
+    @DeveloperAPI
+    def __init__(self, ext_reward_coeff, ext_reward_coeff_schedule):
+        self.ext_reward_coeff = tf.get_variable("ext_reward_coeff", initializer=float(ext_reward_coeff), trainable=False)
+
+        if ext_reward_coeff_schedule is None:
+            self.ext_reward_coeff_schedule = ConstantSchedule(
+                ext_reward_coeff, framework=None)
+        else:
+            # Allows for custom schedule similar to lr_schedule format
+            if isinstance(ext_reward_coeff_schedule, list):
+                self.ext_reward_coeff_schedule = PiecewiseSchedule(
+                    ext_reward_coeff_schedule,
+                    outside_value=ext_reward_coeff_schedule[-1][-1],
+                    framework=None)
+            else:
+                # Implements previous version but enforces outside_value
+                self.ext_reward_coeff_schedule = PiecewiseSchedule(
+                    [[0, ext_reward_coeff], [ext_reward_coeff_schedule, 0.0]],
+                    outside_value=0.0,
+                    framework=None)
+
+    @override(Policy)
+    def on_global_var_update(self, global_vars):
+        super(ExtRewardCoeffSchedule, self).on_global_var_update(global_vars)
+        self.ext_reward_coeff.load(
+            self.ext_reward_coeff_schedule.value(global_vars["timestep"]),
+            session=self._sess)
+
+
 def setup_mixins(policy, obs_space, action_space, config):
     ValueNetworkMixin.__init__(policy, obs_space, action_space, config)
     KLCoeffMixin.__init__(policy, config)
     EntropyCoeffSchedule.__init__(policy, config["entropy_coeff"],
                                   config["entropy_coeff_schedule"])
     LearningRateSchedule.__init__(policy, config["lr"], config["lr_schedule"])
+    DangerRewardCoeffSchedule.__init__(policy, config["danger_reward_coeff"], config["danger_reward_coeff_schedule"])
+    ExtRewardCoeffSchedule.__init__(policy, config["ext_reward_coeff"], config["ext_reward_coeff_schedule"])
 
 
 PPOTFStateDangerPolicy = build_tf_policy(
@@ -345,7 +416,7 @@ PPOTFStateDangerPolicy = build_tf_policy(
     before_loss_init=setup_mixins,
     mixins=[
         LearningRateSchedule, EntropyCoeffSchedule, KLCoeffMixin,
-        ValueNetworkMixin
+        ValueNetworkMixin, DangerRewardCoeffSchedule, ExtRewardCoeffSchedule
     ])
 
 PPOTFActionDangerPolicy = build_tf_policy(
@@ -360,5 +431,5 @@ PPOTFActionDangerPolicy = build_tf_policy(
     before_loss_init=setup_mixins,
     mixins=[
         LearningRateSchedule, EntropyCoeffSchedule, KLCoeffMixin,
-        ValueNetworkMixin
+        ValueNetworkMixin, DangerRewardCoeffSchedule, ExtRewardCoeffSchedule
     ])

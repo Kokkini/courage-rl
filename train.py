@@ -10,6 +10,7 @@ from callbacks import CustomCallbacks
 from ppo import StateDangerPPOTrainer, ActionDangerPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
+import pickle
 
 args = argparse.ArgumentParser()
 args.add_argument("--baseline", action="store_true", help="whether to use the baseline ppo method")
@@ -20,6 +21,7 @@ args.add_argument("--state-danger", action="store_true", help="whether to calcul
 args.add_argument("--callback", action="store_true")
 args.add_argument("--visual-obs", action="store_true", help="whether the observation is visual (an image) or non visual (a vector), default is non visual")
 args.add_argument("--level-file", default=None, help="path to level file")
+args.add_argument("--restore-checkpoint", default=None)
 
 args = args.parse_args()
 
@@ -27,8 +29,20 @@ load_envs(os.getcwd()) # Load envs
 load_models(os.getcwd()) # Load models
 
 ray.init()
-with open(args.config) as f:
-    config = yaml.safe_load(f)
+config = {}
+if args.restore_checkpoint:
+    config_dir = os.path.dirname(args.restore_checkpoint)
+    config_path = os.path.join(config_dir, "params.pkl")
+    # Try parent directory.
+    if not os.path.exists(config_path):
+        config_path = os.path.join(config_dir, "../params.pkl")
+    with open(config_path, "rb") as f:
+        config = pickle.load(f)
+
+else:
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+
 
 
 checkpoint_freq = config.pop("checkpoint_freq", 0)
@@ -63,23 +77,31 @@ stop = None
 if "stop" in config:
     stop = config.pop("stop")
 
+
 if not args.baseline:
     if config.get("use_curiosity", False):
         config["model"]["custom_options"]["use_curiosity"] = True
-    env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
-    if env.spec is not None:
-        env_max_step = env.spec.max_episode_steps
-    else:
-        env_max_step = env.max_steps
-    env.close()
-    config["max_step"] = env_max_step
-    print("env max step:", env_max_step)
+    if args.restore_checkpoint is None:
+        env = trainer(config=config, env=config["env"]).env_creator(config.get("env_config"))
+        if env.spec is not None:
+            env_max_step = env.spec.max_episode_steps
+        else:
+            env_max_step = env.max_steps
+        env.close()
+        config["max_step"] = env_max_step
+        print("env max step:", env_max_step)
 
 
 print(config)
 
 if args.tune_config is None:
-    tune.run(trainer, config=config, stop=stop, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)
+    if args.restore_checkpoint is None:
+        train_result = tune.run(trainer, config=config, stop=stop, checkpoint_freq=checkpoint_freq, checkpoint_at_end=checkpoint_at_end, keep_checkpoints_num=keep_checkpoints_num)
+    else:
+        train_result = tune.run(trainer, config=config, stop=stop, checkpoint_freq=10, checkpoint_at_end=True, keep_checkpoints_num=5, restore=args.restore_checkpoint)
+
+    log_dir = train_result.get_best_logdir("reward", mode='max', scope='all')
+    print(f"log dir: {log_dir}")
 else:
     tuning_module = importlib.import_module(f"tuning.{args.tune_config}")
     algo = tuning_module.algo
