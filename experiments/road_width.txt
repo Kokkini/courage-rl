@@ -4,7 +4,7 @@ checkpoint_freq: 10
 checkpoint_at_end: True
 keep_checkpoints_num: 5
 stop:
-    timesteps_total: 500000
+    timesteps_total: 150000
 num_workers: 2
 num_cpus_per_worker: 0.5
 num_gpus: 0
@@ -18,6 +18,7 @@ model:
     custom_model: simple_fcnet
     custom_options:
         curiosity_encoding_size: 16
+    free_log_std: True
 
 danger_loss_coeff: 0.1
 danger_reward_coeff: 5
@@ -37,17 +38,17 @@ ext_reward_coeff_schedule: null
 
 fixed_death_cost_multiplier: 10
 
-gamma: 0.99
-lambda: 0.95
-lr: 0.0006
-num_sgd_iter: 2
-sgd_minibatch_size: 256
-train_batch_size: 4096
+gamma: 0.995
+lambda: 0.97
+lr: 0.0003
+num_sgd_iter: 10
+sgd_minibatch_size: 64
+train_batch_size: 2048
 # Initial coefficient for KL divergence.
 kl_coeff: 0.0
 kl_target: 0.01
 vf_loss_coeff: 0.45
-entropy_coeff: 0.01
+entropy_coeff: 0.0
 clip_param: 0.2
 vf_clip_param: 40
 # If specified, clip the global norm of gradients by this amount.
