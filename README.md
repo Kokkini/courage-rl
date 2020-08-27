@@ -86,11 +86,11 @@ look at where the new yellow pop up, we can see where the agent is exploring. It
 
 The goal is to drive the car to the green cylinder without touching the blue areas, which results in instant death.
 
-This experiment is still in progress but what I expect to see is:
-* The baseline PPO agent will not generalize to the evaluation environment with narrow roads
-* The courageous agent will generalize to the evaluation environment because in training, it spent time driving really close to the blue areas without touching them.
 
 Results:
+
+* The baseline PPO agent does not generalize to the evaluation environment with narrow roads
+* The courageous agent generalizes better to the evaluation environment because in training, it spent time driving really close to the blue areas without touching them.
 
 |    | Courage | PPO |
 | --- | --- | --- |
@@ -98,6 +98,7 @@ Results:
 | training environment success rate  | 1.00  | 1.00 |
 | evaluation environment mean reward  | 2.73  | 1.65 |
 | evaluation environment success rate  | 0.22  | 0.02 |
+
 
 <p align="center">
   <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_courage_worked.gif">
