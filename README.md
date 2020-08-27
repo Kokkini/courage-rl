@@ -107,7 +107,7 @@ Results:
 
 
 <p align="center">
-  Left: a sample training episode of the courageous agent. Right: a sample training episode of the PPO agent
+  Training. Left: courage. Right: PPO
 </p>
 
 
@@ -119,7 +119,7 @@ Results:
 
 
 <p align="center">
-  Left: a sample evalution episode of the courageous agent. Right: a sample evalution episode of the PPO agent
+  Evaluation. Left: courage. Right: PPO
 </p>
 
 
