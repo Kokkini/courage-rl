@@ -101,22 +101,25 @@ Results:
 
 
 <p align="center">
-  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_courage_worked.gif">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_courage_train.gif">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_baseline_train.gif">
 </p>
 
 
 <p align="center">
-  Sample evaluation play of the courageous agent
+  Left: a sample training episode of the courageous agent. Right: a sample training episode of the PPO agent
+</p>
+
+
+
+<p align="center">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_courage_worked.gif">
+  <img width="240" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_baseline_high.gif">
 </p>
 
 
 <p align="center">
-  <img width="480" src="https://github.com/Kokkini/courage-rl/blob/master/media/narrow_road_s_baseline_high.gif">
-</p>
-
-
-<p align="center">
-  Sample evaluation play of the PPO agent
+  Left: a sample evalution episode of the courageous agent. Right: a sample evalution episode of the PPO agent
 </p>
 
 
