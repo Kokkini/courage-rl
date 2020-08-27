@@ -36,6 +36,7 @@ DEFAULT_CONFIG = with_common_config({
     "period": 50,
     "ext_reward_coeff": 1,
     "ext_reward_coeff_schedule": None,
+    "death_reward_after_exploration": 0.0,
     # Should use a critic as a baseline (otherwise don't use value baseline;
     # required for using GAE).
     "use_critic": True,

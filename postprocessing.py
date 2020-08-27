@@ -224,13 +224,15 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     use_curiosity = config["use_curiosity"]
     fixed_death_cost_multiplier = config["fixed_death_cost_multiplier"]
     period = config["period"]
+    death_reward_after_exploration = config["death_reward_after_exploration"]
 
     # TO DO: add this to configuration file
-    use_fixed_courage_reward = True
+    use_fixed_courage_reward = False
     # fixed_death_cost_multiplier = 10
     death_threshold = 0.1
     total_period_reward = 1
     death_cost = 0.2
+
 
     traj = {}
     trajsize = len(rollout[SampleBatch.ACTIONS])
@@ -289,6 +291,8 @@ def compute_advantages_and_danger(rollout, last_r, config, use_critic=True):
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS].astype(np.float32)
     danger_reward_coeff = traj[SampleBatch.DANGER_REWARD_COEFF][-1]
     ext_reward_coeff = traj[SampleBatch.EXT_REWARD_COEFF][-1]
+    if death[-1] == 1.0:
+        traj[SampleBatch.REWARDS][-1] += death_reward_after_exploration
     traj[SampleBatch.REWARDS] = traj[SampleBatch.REWARDS] * ext_reward_coeff + traj[Postprocessing.DANGER_REWARD] * danger_reward_coeff + traj[Postprocessing.CURIOSITY_REWARD] * curiosity_reward_coeff
 
 

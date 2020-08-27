@@ -27,6 +27,7 @@ from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID
 from ppo import StateDangerPPOTrainer, ActionDangerPPOTrainer
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from utils.loader import load_envs, load_models, load_algorithms
+import numpy as np
 
 args = argparse.ArgumentParser()
 args.add_argument("--baseline", action="store_true", help="whether to use the baseline ppo method")
@@ -35,6 +36,7 @@ args.add_argument("--num-levels", default=5, type=int)
 args.add_argument("--out")
 args.add_argument("--video-dir", default=None)
 args.add_argument("--deterministic", action="store_true")
+args.add_argument("--level-file")
 
 args = args.parse_args()
 
@@ -313,7 +315,7 @@ ray.init()
 # keep_checkpoints_num = config.pop("keep_checkpoints_num", None)
 
 trainer = None
-# cwd = os.path.dirname(os.path.realpath(__file__))
+
 
 # if args.visual_obs:
 #     config["model"]["custom_model"] = "vision_net"
@@ -351,7 +353,12 @@ def restore_agent(checkpoint_path, baseline=False, num_levels=5, deterministic=F
     config["evaluation_interval"] = 0
     config["monitor"] = False
 
+    if args.level_file is not None:
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        config["env_config"]["level_file"] = os.path.join(cwd, args.level_file)
+
     print(config)
+
 
     if baseline:
         trainer = PPOTrainer
@@ -371,6 +378,8 @@ num_steps = None
 num_levels = args.num_levels
 restored_trainer, config = restore_agent(args.checkpoint, args.baseline, args.num_levels, args.deterministic, args.video_dir)
 
+
+
 # Do the actual rollout.
 with RolloutSaver(
         args.out,
@@ -379,6 +388,7 @@ with RolloutSaver(
         target_steps=num_steps,
         target_episodes=num_levels,
         save_info=False) as saver:
-    result = rollout(restored_trainer, config["env"], num_steps, num_levels, saver, True, args.video_dir)
+    rewards, lengths = rollout(restored_trainer, config["env"], num_steps, num_levels, saver, True, args.video_dir)
 
-print(result)
+print(f"mean reward: {np.mean(rewards)}")
+print(f"mean length: {np.mean(lengths)}")
