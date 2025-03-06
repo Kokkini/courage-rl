@@ -1,5 +1,5 @@
 gym==0.17.2
-ray==0.8.6
+ray==2.43.0
 tensorflow
 tabulate
 dm-tree
